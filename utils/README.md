@@ -18,5 +18,6 @@ I know the code used for Patching is not very efficient, (waiting for your PR's)
 but, it gets the job done in less than 3 seconds.
 
 </br>
+</br>
 And if someone is reading,</br>
 the way i normalized the values is total BS. Help me correct them, or i will eventually figure out something.

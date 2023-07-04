@@ -3,15 +3,15 @@ import shutil
 
 
 # Path to Preset Directory
-xml_directory = r'/home/adity/Downloads/Viper4Android-presets-4a-2.7/Preset'
+xml_directory = r''
 
 # Path to DDC & Kernel Directory
-vdc_directory = r'/home/adity/Downloads/Viper4Android-presets-4a-2.7/DDC'
-irs_directory = r'/home/adity/Downloads/Viper4Android-presets-4a-2.7/Kernel'
+vdc_directory = r''
+irs_directory = r''
 
 # Path where to store Filtered DDC & Kernel
-new_vdc_directory = r'/home/adity/Downloads/Viper4Android-presets-4a-2.7/Filtered/DDC'
-new_irs_directory = r'/home/adity/Downloads/Viper4Android-presets-4a-2.7/Filtered/Kernel'
+new_vdc_directory = r''
+new_irs_directory = r''
 
 
 # Loading List of XML's
