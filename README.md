@@ -4,17 +4,31 @@ Largest collection of DDC(.vdc), Kernel(.irs) & Preset(.xml) for ViPER4Android F
 </br>
 </br>
 
-Checkout [ViPER4AndroidFXRepack](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack)  
-ViPER4AndroidFx Reborn & Repack.
+Checkout [ViPER4AndroidFXRepack](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack) - ViPER4AndroidFx Reborn & Repack.
 
 </br>
 
 ---
 
+</br>
+
+## Core and Full Version
+
+Since Release 1.5.0, there are two available versions for download.</br>
+
+* **Full** - All `DDC(.vdc)`, `Kernel(.irs)` & `Preset(.xml)` are included.
+
+* **Core** - All `Preset(.xml)` are icluded and only the required `DDC(.vdc)` & `Kernel(.irs)` for the Preset XML's to function properly are included
+
+</br>
+
+---
+
+</br>
 All current available DDC, Kernel & Preset are sourced from [Viper4Android-presets](https://github.com/jadilson12/Viper4Android-presets).
 
-But this dosen't mean they worked from the start.  
-DDC & Kernel Files are the same.  
+But this dosen't mean they worked from the start.</br>
+DDC & Kernel Files are the same.</br>
 But all the Preset XML's have been reworked.
 
 - All the Preset XML's have been renamed to their respective names for ease of use and to avoid any confusion/hassle.
@@ -36,8 +50,7 @@ But all the Preset XML's have been reworked.
 
   </br>
 
-  Code used for patching [convert.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/convert.py).  
-  Definitely not the most efficient way to do it (Waiting for your PR's), but gets the job done in under three seconds.
+Check `utils` Folder for Python Code and steps involved in Renaming, Patching and more.
 
 </br>
 
