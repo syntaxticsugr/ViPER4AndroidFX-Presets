@@ -1,4 +1,5 @@
 # ViPER4AndroidFXRepack-Presets
+
 Largest collection of DDC(.vdc), Kernel(.irs) & Preset(.xml) for ViPER4Android FX 2.7.x
 
 </br>
@@ -28,8 +29,10 @@ Since Release 1.5.0, there are two available versions for download.</br>
 
 All current available DDC, Kernel & Preset are sourced from [Viper4Android-presets](https://github.com/jadilson12/Viper4Android-presets).
 
-But this dosen't mean they worked from the start.</br>
-DDC & Kernel Files are the same.</br>
+But this dosen't mean they worked from the start.
+</br>
+DDC & Kernel Files are the same.
+</br>
 But all the Preset XML's have been reworked.
 
 - All the Preset XML's have been renamed to their respective names for ease of use and to avoid any confusion/hassle.
@@ -49,7 +52,7 @@ But all the Preset XML's have been reworked.
   - ViPER Bass
   - ViPER Clarity
 
-  </br>
+</br>
 
 Check `utils` Folder for Python Code and steps involved in Renaming, Patching and more.
 
@@ -58,4 +61,5 @@ Check `utils` Folder for Python Code and steps involved in Renaming, Patching an
 ---
 
 ### Credits
+
 [Jadilson Guedes](https://github.com/jadilson12)

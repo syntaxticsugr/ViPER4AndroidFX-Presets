@@ -34,13 +34,13 @@ for xml_file in xml_files:
                 vdc_name = line[(line.find(">")+1):line.find("<", line.find(">"))]
                 if (vdc_name != ""):
                     try:
-                        shutil.move(vdc_directory + '/' + vdc_name, new_vdc_directory)
+                        shutil.copyfile(vdc_directory + '/' + vdc_name, new_vdc_directory + '/' + vdc_name)
                     except: pass
 
-            # Filtering DDC(.irs)
+            # Filtering Kernel(.irs)
             if ("65540;65541;65542" in line):
                 irs_name = line[(line.find(">")+1):line.find("<", line.find(">"))]
                 if (irs_name != ""):
                     try:
-                        shutil.move(irs_directory + '/' + irs_name, new_irs_directory)
+                        shutil.copyfile(irs_directory + '/' + irs_name, new_irs_directory + '/' + irs_name)
                     except: pass

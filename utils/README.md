@@ -5,19 +5,26 @@
 2. Place `utils` Folder from this Repository inside it
 
 3. Execute the following Python scripts in order:
+
     1. [rename_xmls.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/rename_xmls.py)
+
     2. [convert_xmls.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/convert_xmls.py)
+
     3. [remove_duplicates.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/remove_duplicates.py)
+
     4. [filter_vdc_irs.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/filter_vdc_irs.py)*
     
     </br>
+
     *For Core Package
 
 </br>
-I know the code used for Patching is not very efficient, (waiting for your PR's)<br>
-but, it gets the job done in less than 3 seconds.
+
+And about the refrences of Deleted DDC and Kernel in XML's after Step3 -
+<br>
+It's a back and forth process need to use the same python code but in a different controlled order, Lazy to explain that one (will update in future).
 
 </br>
-</br>
-And if someone is reading,</br>
-the way i normalized the values is total BS. Help me correct them, or i will eventually figure out something.
+I know the code used for Patching is not very efficient, (waiting for your PR's)
+<br>
+but, it gets the job done in less than 3 seconds.

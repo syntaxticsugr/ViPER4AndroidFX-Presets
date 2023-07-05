@@ -1,10 +1,10 @@
 import os
 
-# Passing the path to Preset folder
-preset_folder = r'/home/adity/Downloads/Viper4Android-presets-4a-2.7/Preset'
+# Path to Preset folder
+preset_folder = r''
 
-# Path to new Directory for storing Renamed Presets
-new_directory = r'/home/adity/Downloads/Viper4Android-presets-4a-2.7/RenamedPreset'
+# Path to New Directory for storing Renamed Presets
+renamed_xml_directory = r''
 
 # Getting the list of folders within Preset folder
 folders = os.listdir(preset_folder)
@@ -24,6 +24,7 @@ for folder in folders:
         extension = file[extension_pos:]
 
         # Renaming file to folder name
-        # And placing them in New Preset Directory
+        # Changing "_" and " " to "-" in XML's Name
+        # And placing them in new Renamed XML Directory
         os.rename(r'{}/{}/{}'.format(preset_folder, folder, file),
-                  r'{}/{}{}'.format(new_directory, folder.strip().replace("_", "-").replace(" ", "-"), extension))
+                  r'{}/{}{}'.format(renamed_xml_directory, folder.strip().replace("_", "-").replace(" ", "-"), extension))

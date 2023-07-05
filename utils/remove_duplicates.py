@@ -10,6 +10,8 @@ import sys
 import hashlib
 from collections import defaultdict
 
+
+# Path to Text Files kept for Logs
 dup_vdc_txt_file = r''
 dup_irs_txt_file = r''
 dup_xml_txt_file = r''
@@ -90,16 +92,31 @@ def check_for_duplicates(paths):
                 if full_hash in files_by_full_hash:
                     duplicate = files_by_full_hash[full_hash]
 
-                    # Collecting Duplicate File Names In Respective Text File
                     print("Duplicate found:\n - %s\n - %s\n" % (filename, duplicate))
-                    
-                    if (".vdc" in os.path.basename(filename)): dup_vdc_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
-                    if (".irs" in os.path.basename(filename)): dup_irs_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
-                    if (".xml" in os.path.basename(filename)): dup_xml_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
-                    
-                    try:
-                        os.remove(duplicate)
-                    except: pass
+
+                    if (".vdc" in os.path.basename(filename)):
+                        # # Collecting Duplicate File Names In Respective Text File
+                        # dup_vdc_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        # Deleting Duplicate VDC's
+                        try:
+                            os.remove(filename)
+                        except: pass
+
+                    if (".irs" in os.path.basename(filename)):
+                        # Collecting Duplicate File Names In Respective Text File
+                        dup_irs_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        # Deleting Duplicate IRS's
+                        try:
+                            os.remove(filename)
+                        except: pass
+
+                    if (".xml" in os.path.basename(filename)):
+                        # # Collecting Duplicate File Names In Respective Text File
+                        # dup_xml_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        # Deleting Duplicate XML's
+                        try:
+                            os.remove(filename)
+                        except: pass
 
                 else:
                     files_by_full_hash[full_hash] = filename
