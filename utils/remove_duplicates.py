@@ -11,7 +11,7 @@ import hashlib
 from collections import defaultdict
 
 
-# Path to Text Files kept for Logs
+# Path to Text Files
 dup_vdc_txt_file = r''
 dup_irs_txt_file = r''
 dup_xml_txt_file = r''
@@ -95,8 +95,8 @@ def check_for_duplicates(paths):
                     print("Duplicate found:\n - %s\n - %s\n" % (filename, duplicate))
 
                     if (".vdc" in os.path.basename(filename)):
-                        # # Collecting Duplicate File Names In Respective Text File
-                        # dup_vdc_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        # Collecting Duplicate File Names In Respective Text File
+                        dup_vdc_txt.write("{}\n{}\n".format(os.path.basename(filename), os.path.basename(duplicate)))
                         # Deleting Duplicate VDC's
                         try:
                             os.remove(filename)
@@ -104,15 +104,15 @@ def check_for_duplicates(paths):
 
                     if (".irs" in os.path.basename(filename)):
                         # Collecting Duplicate File Names In Respective Text File
-                        dup_irs_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        dup_irs_txt.write("{}\n{}\n".format(os.path.basename(filename), os.path.basename(duplicate)))
                         # Deleting Duplicate IRS's
                         try:
                             os.remove(filename)
                         except: pass
 
                     if (".xml" in os.path.basename(filename)):
-                        # # Collecting Duplicate File Names In Respective Text File
-                        # dup_xml_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        # Collecting Duplicate File Names In Respective Text File
+                        dup_xml_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
                         # Deleting Duplicate XML's
                         try:
                             os.remove(filename)

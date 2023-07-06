@@ -9,6 +9,9 @@ renamed_xml_directory = r''
 # Getting the list of folders within Preset folder
 folders = os.listdir(preset_folder)
 
+# Total Number of XML Folders 
+count = len(folders)
+
 # Accessing each folder
 for folder in folders:
 
@@ -28,3 +31,7 @@ for folder in folders:
         # And placing them in new Renamed XML Directory
         os.rename(r'{}/{}/{}'.format(preset_folder, folder, file),
                   r'{}/{}{}'.format(renamed_xml_directory, folder.strip().replace("_", "-").replace(" ", "-"), extension))
+
+    # Printing Number of Remaining Folders to Process
+    count-=1
+    print("Remaining: ", count)

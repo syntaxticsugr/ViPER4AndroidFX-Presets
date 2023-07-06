@@ -178,6 +178,8 @@ for old_xml_file in old_xml_files:
                     
                     if ("65540;65541;65542" in default_line):
                         if (("65540;65541;65542" in old_line) or ("65591;65592;65593" in old_line)):
+                            # Correcting '&' in Kernel(.irs) Names
+                            old_line = old_line.replace("></string>amp;", "&amp;").replace(">Select impulse response file</string>amp;", "&amp;")
                             new_xml.write(old_line.replace("65591;65592;65593", "65540;65541;65542") + "\n")
                             break
                     

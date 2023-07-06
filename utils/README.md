@@ -12,17 +12,13 @@
 
     3. [remove_duplicates.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/remove_duplicates.py)
 
-    4. [filter_vdc_irs.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/filter_vdc_irs.py)*
+    4. [reference_fixer.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/reference_fixer.py)
+
+    5. [filter_vdc_irs.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/filter_vdc_irs.py)*
     
     </br>
 
-    *For Core Package
-
-</br>
-
-And about the refrences of Deleted DDC and Kernel in XML's after Step3 -
-<br>
-It's a back and forth process need to use the same python code but in a different controlled order, Lazy to explain that one (will update in future).
+    *For Lite Package
 
 </br>
 I know the code used for Patching is not very efficient, (waiting for your PR's)
