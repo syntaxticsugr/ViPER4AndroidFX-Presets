@@ -122,8 +122,10 @@ def check_for_duplicates(paths):
                     files_by_full_hash[full_hash] = filename
 
 
-if __name__ == "__main__":
-    if sys.argv[1:]:
-        check_for_duplicates(sys.argv[1:])
-    else:
-        print("Usage: %s <folder> [<folder>...]" % sys.argv[0])
+# if __name__ == "__main__":
+#     if sys.argv[1:]:
+#         check_for_duplicates(sys.argv[1:])
+#     else:
+#         print("Usage: %s <folder> [<folder>...]" % sys.argv[0])
+
+check_for_duplicates([])

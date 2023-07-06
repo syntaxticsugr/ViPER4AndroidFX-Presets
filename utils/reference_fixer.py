@@ -1,6 +1,7 @@
 import os
 
-# Path to Duplicate Log Text Files
+
+# Path to Text Files
 dup_vdc_txt_file = r''
 dup_irs_txt_file = r''
 
@@ -22,7 +23,7 @@ with open(dup_vdc_txt_file) as dup_vdc_txt:
     content = dup_vdc_txt.readlines()
 
     # Looping through Each entry
-    for n in range(0, len(content)-1, 2):
+    for n in range(0, len(content), 3):
 
         # Looping though Each XML file
         for preset_xml_file in preset_xml_files:
@@ -32,7 +33,7 @@ with open(dup_vdc_txt_file) as dup_vdc_txt:
                 filedata = file.read()
 
             # Updating XML dta
-            filedata = filedata.replace(content[n].strip(), content[n+1].strip())
+            filedata = filedata.replace(content[n].strip().replace("&", "&amp;"), content[n+1].strip().replace("&", "&amp;"))
 
             # Rewriting New Data in XML
             with open(preset_xml_directory + '/' + preset_xml_file, 'w') as file:
@@ -57,7 +58,7 @@ with open(dup_irs_txt_file) as dup_irs_txt:
     content = dup_irs_txt.readlines()
 
     # Looping through Each entry
-    for n in range(0, len(content)-1, 2):
+    for n in range(0, len(content), 3):
 
         # Looping though Each XML file
         for preset_xml_file in preset_xml_files:
@@ -67,7 +68,7 @@ with open(dup_irs_txt_file) as dup_irs_txt:
                 filedata = file.read()
 
             # Updating XML dta
-            filedata = filedata.replace(content[n].strip(), content[n+1].strip())
+            filedata = filedata.replace(content[n].strip().replace("&", "&amp;"), content[n+1].strip().replace("&", "&amp;"))
 
             # Rewriting New Data in XML
             with open(preset_xml_directory + '/' + preset_xml_file, 'w') as file:
