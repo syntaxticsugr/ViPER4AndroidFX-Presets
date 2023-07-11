@@ -28,7 +28,7 @@ for old_xml_file in old_xml_files:
     # Default ID2 XML
     # Old XML
     # New XML
-    with open(default_id1_xml_file) as default_id1_xml, open(default_id2_xml_file) as default_id2_xml, open(old_xml_directory + '/' + old_xml_file) as old_xml, open(new_xml_directory + '/' + os.path.basename(old_xml_file), 'w+') as new_xml:
+    with open(default_id1_xml_file) as default_id1_xml, open(default_id2_xml_file) as default_id2_xml, open(old_xml_directory + '/' + old_xml_file) as old_xml, open(new_xml_directory + '/' + os.path.basename(old_xml_file), 'w') as new_xml:
 
         # Selecting the Appropriate Default XML
         # Loading Default XML Content

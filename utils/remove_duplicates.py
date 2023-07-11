@@ -96,7 +96,7 @@ def check_for_duplicates(paths):
 
                     if (".vdc" in os.path.basename(filename)):
                         # Collecting Duplicate File Names In Respective Text File
-                        dup_vdc_txt.write("{}\n{}\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        dup_vdc_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
                         # Deleting Duplicate VDC's
                         try:
                             os.remove(filename)
@@ -104,7 +104,7 @@ def check_for_duplicates(paths):
 
                     if (".irs" in os.path.basename(filename)):
                         # Collecting Duplicate File Names In Respective Text File
-                        dup_irs_txt.write("{}\n{}\n".format(os.path.basename(filename), os.path.basename(duplicate)))
+                        dup_irs_txt.write("{}\n{}\n\n".format(os.path.basename(filename), os.path.basename(duplicate)))
                         # Deleting Duplicate IRS's
                         try:
                             os.remove(filename)
