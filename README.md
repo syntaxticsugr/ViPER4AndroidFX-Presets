@@ -1,49 +1,36 @@
-# ViPER4AndroidFXRepack-Presets
+# ViPER4AndroidFX Repack-Presets
 
-Largest collection of DDC(.vdc), Kernel(.irs) & Preset(.xml) for ViPER4AndroidFX v2.7.2.1
+Largest collection of DDC(.vdc), Kernel(.irs) & Preset(.xml) for ViPER4AndroidFX
 
-</br>
+[![Android](https://img.shields.io/badge/Platform-Android-green.svg?style=flat-square)](https://www.android.com) [![Release](https://img.shields.io/github/v/release/syntaxticsugr/ViPER4AndroidFXRepack-Presets?color=blue&label=Release&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases) [![Downloads](https://img.shields.io/github/downloads/syntaxticsugr/ViPER4AndroidFXRepack-Presets/total?color=brightgrey&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases)
 
-## NOTES
-#### The repository isn't abandoned, for the time being it needs no updates :)
-#### Always recommended to use the latest available version.
+If you find my work useful Star ⭐ my repo : )
+<br>
+And if you use my work in your project, a credit would be nice : )
 
-</br>
-
-## Full & Lite Release
-
-Since Release 1.1.0, there are two available versions for download.</br>
-
-* **Full** - All available `DDC(.vdc)`, `Kernel(.irs)` & `Preset(.xml)` are included.
-
-* **Lite** - All the `Preset(.xml)` are icluded but, only the required `DDC(.vdc)` & `Kernel(.irs)` by those `Preset(.xml)` are included.
-
-</br>
-</br>
+<br>
 
 ---
 
-All current available `DDC(.vdc)` & `Kernel(.irs)` are sourced from
+<br>
+
+All current available `DDC(.vdc)`, `Kernel(.irs)` and `Preset(.xml)` are sourced from
 - [Viper4Android-presets](https://github.com/jadilson12/Viper4Android-presets)
 - [ViPER4AndroidFX Telegram Channel](https://t.me/ViPER4AndroidFX)
+- [ViPER4AndroidRepackaged](https://github.com/programminghoch10/ViPER4AndroidRepackaged)
+- [ViperFX-RE-Releases](https://github.com/WSTxda/ViperFX-RE-Releases)
 
-All the Duplicate `DDC(.vdc)` & `Kernel(.irs)` have been deleted.
+<br>
 
-</br>
+---
 
-`Preset(.xml)` are souced from [Viper4Android-presets](https://github.com/jadilson12/Viper4Android-presets)
+<br>
 
-But this dosen't mean they worked from the start, all the `Preset(.xml)` have been reworked.
+All the `Preset(.xml)` are patched to work on the latest ViPER4AndroidFX
 
-- All the `Preset(.xml)` have been renamed to their respective names for ease of use and to avoid any confusion/hassle.
-- All the duplicate `Preset(.xml)` have been deleted.
-- All the `Preset(.xml)` are patched to work on latest ViPER4AndroidFX v2.7.2.1
-
-</br>
-
-## Patch Information:
-- Added missing Tags
-- Updated old Key-Value pairs
+### Patch Information:
+- Added missing Features
+- Updated old Feature-Value pairs
 - Values of Master Limiter & Playback Gain Control are set to ViPER Defaults for all Presets (Subject To Change In Future)
 - Normalized values of the following ViPER features:
   - Field Surround
@@ -52,48 +39,32 @@ But this dosen't mean they worked from the start, all the `Preset(.xml)` have be
   - ViPER Bass
   - ViPER Clarity
 
-</br>
+Check `utils` folder for Python Code and Steps involved in Renaming, Patching and more.
 
-Check `utils` Folder for Python Code and Steps involved in Renaming, Patching and more.
-
-</br>
+<br>
 
 ---
 
-Some `DDC(.vdc)` & `Kernel(.irs)` files were nowhere to be found, they are replaced with their close counterparts in required `Preset(.xml)`.
-</br>
-</br>
-Still a few are remaining :(
-</br>
-maybe, you can help :)
+### v1.5.0
 
-</br>
+|| Total | Uniques |
+| --- | --- | --- |
+| **DDC** | 612 | 572 |
+| **Kernel** | 2187 | 1594 |
+| **Preset** | 1685 | 848 |
 
-| Can't Find | Replaced With |
-| --- | --- |
-| Storm Extrabass.vdc | - |
-| Storm TREBASS.vdc | - |
-| Devarim.vdc | DAXrich.vdc |
-| Ark+ICEsound 2.4b.vdc | Ark+ICE Deut2.4RC2.vdc |
-| SRS_1_2_indaclub+stereo.irs | srs_1_2_indaclub+stereo.irs |
-| More Warmth.irs | TRacks Classic EQ Mastering More Warmth.irs |
-| Apple iPod ((48k Z-Edition)) 04.Classical.irs | Apple iPod ((128K MP3)) 04.Classical.irs |
-| samsung_i9300_soundalive_13_cafe.irs | Samsung SoundAlive Clarity.irs |
-| Storm Standard.irs | Storm Unity.irs |
-| Sony Xperia VPT Studio Re.irs | Sony Xperia VPT Studio.irs |
-| atmoscomp-44k.irs | Atmos DAP65 surround 44100.irs |
-| Devarim.irs | ViPER4ARISE.irs |
-| Sony XBA-H1-48k.irs | - |
-| FREE FREE FREE FREE Sony XPERIA S.Enhance Clearbass.irs | Sony XPERIA S.Enhance Clearbass.irs |
-
-</br>
+<br>
 
 ---
 
 ### Credits
 
 [Jadilson Guedes](https://github.com/jadilson12)
-</br>
+<br>
 [ViPER4AndroidFX Telegram Channel](https://t.me/ViPER4AndroidFX)
+<br>
+[programminghoch10](https://github.com/programminghoch10)
+<br>
+[WSTxda](https://github.com/WSTxda)
 
-</br>
+<br>
