@@ -1,132 +1,79 @@
-"""
-Fast duplicate file finder.
-Usage: duplicates.py <folder> [<folder>...]
-Based on https://stackoverflow.com/a/36113168/300783
-Modified for Python3 with some small code improvements.
-"""
 import os
 import hashlib
 from collections import defaultdict
+import shutil
 
 
 
-def chunk_reader(fobj, chunk_size=1024):
-    """ Generator that reads a file in chunks of bytes """
-    while True:
-        chunk = fobj.read(chunk_size)
-        if not chunk:
-            return
-        yield chunk
+def get_file_hash(file_path):
+    # Function to calculate the SHA-256 hash of a file
+    hash_sha256 = hashlib.sha256()
+    with open(file_path, "rb") as f:
+        # Read and update hash string value in blocks of 1K
+        for byte_block in iter(lambda: f.read(1024), b""):
+            hash_sha256.update(byte_block)
+    return hash_sha256.hexdigest()
 
-
-
-def get_hash(filename, first_chunk_only=False, hash_algo=hashlib.sha1):
-    hashobj = hash_algo()
-    with open(filename, "rb") as f:
-        if first_chunk_only:
-            hashobj.update(f.read(1024))
-        else:
-            for chunk in chunk_reader(f):
-                hashobj.update(chunk)
-    return hashobj.digest()
-
-
-
-def check_for_duplicates(path):
-    files_by_size = defaultdict(list)
-    files_by_small_hash = defaultdict(list)
-    files_by_full_hash = defaultdict(list)
-
-    for dirpath, _, filenames in os.walk(path):
+def check_for_duplicates(folder_path):
+    # Function to find duplicate files in a folder
+    file_hash_dict = defaultdict(list)
+    
+    for dirpath, _, filenames in os.walk(folder_path):
         for filename in filenames:
-            full_path = os.path.join(dirpath, filename)
-            try:
-                # if the target is a symlink (soft one), this will
-                # dereference it - change the value to the actual target file
-                full_path = os.path.realpath(full_path)
-                file_size = os.path.getsize(full_path)
-            except OSError:
-                # not accessible (permissions, etc) - pass on
-                continue
-            files_by_size[file_size].append(full_path)
-
-    # For all files with the same file size, get their hash on the first 1024 bytes
-    for file_size, files in files_by_size.items():
-        if len(files) < 2:
-            continue  # this file size is unique, no need to spend cpu cycles on it
-
-        for filename in files:
-            try:
-                small_hash = get_hash(filename, first_chunk_only=True)
-            except OSError:
-                # the file access might've changed till the exec point got here
-                continue
-            files_by_small_hash[(file_size, small_hash)].append(filename)
-
-    # For all files with the hash on the first 1024 bytes, get their hash on the full
-    # file - collisions will be duplicates
-    for files in files_by_small_hash.values():
-        if len(files) < 2:
-            # the hash of the first 1k bytes is unique -> skip this file
-            continue
-
-        for filename in files:
-            try:
-                full_hash = get_hash(filename, first_chunk_only=False)
-            except OSError:
-                # the file access might've changed till the exec point got here
-                continue
-
-            files_by_full_hash[full_hash].append(filename)
-
-    return files_by_full_hash
+            file_path = os.path.join(dirpath, filename)
+            file_hash = get_file_hash(file_path)
+            file_hash_dict[file_hash].append(file_path)
+    
+    return file_hash_dict
 
 
 
 # Function to Write Duplicate File Names in Respective Text Files
 def save_duplicate_names(folder_path, dup_txt_file):
-    files_by_full_hash = check_for_duplicates(folder_path)
-    duplicate_files = {k: v for k, v in files_by_full_hash.items() if len(v) > 1}
-    with open(dup_txt_file, 'w+', encoding='utf-8') as dup_txt:
+    file_hash_dict = check_for_duplicates(folder_path)
+    duplicate_files = {k: v for k, v in file_hash_dict.items() if len(v) > 1}
+    with open(dup_txt_file, 'w', encoding='utf-8') as dup_txt:
         for hash_value, files in duplicate_files.items():
             dup_txt.write(f"Hash: {hash_value}\n")
-            for file_path in files:
-                dup_txt.write(f"  - {file_path}\n")
+            for file in files:
+                # dup_txt.write(f"\t- {file}\n")
+                dup_txt.write(f"{os.path.basename(file)}\n")
             dup_txt.write("\n")
 
 
 
 # Function to Save Unique Files in a different folder
-def save_unique_files(folder_path, new_save_path):
-    files_by_full_hash = check_for_duplicates(folder_path)
-    for _, files in files_by_full_hash.items():
-        for file_path in files:
-            os.rename(file_path, r'{}/{}'.format(new_save_path, (file_path.split("\\"))[-1]))
+def save_unique_files(folder_path, unique_save_path):
+    file_hash_dict = check_for_duplicates(folder_path)
+    for _, files in file_hash_dict.items():
+        for file in files:
+            destination = r'{}/{}'.format(unique_save_path, os.path.basename(file))
+            shutil.copyfile(file, destination)
             break
 
 
 
-# Path to Text Files for saving Names of Duplicate files
-dup_vdc_txt_file = r'C:/Users/aditya/Desktop/New folder/utils/dup_vdc.txt'
-dup_irs_txt_file = r'C:/Users/aditya/Desktop/New folder/utils/dup_irs.txt'
-dup_xml_txt_file = r'C:/Users/aditya/Desktop/New folder/utils/dup_xml.txt'
+# Path to log text files for saving names of duplicate files
+dup_DDCs_txt_file = r''
+dup_Kernels_txt_file = r''
+dup_Presets_txt_file = r''
 
-# Path to Folders where need to check Duplicates
-vdc_path = r'C:/Users/aditya/Desktop/New folder/DDC'
-irs_path = r'C:/Users/aditya/Desktop/New folder/Kernel'
-xml_path = r'C:/Users/aditya/Desktop/New folder/XML-Converted'
+# Path to folders where need to check duplicates
+DDCs_path = r''
+Kernels_path = r''
+Presets_path = r''
 
-# Path to Folder where to save Unique files
-new_vdc_path = r'C:/Users/aditya/Desktop/New folder/DDC-Unique'
-new_irs_path = r'C:/Users/aditya/Desktop/New folder/Kernel-Unique'
-new_xml_path = r'C:/Users/aditya/Desktop/New folder/XML-Unique'
-
-# Function Call
-save_duplicate_names(vdc_path, dup_vdc_txt_file)
-save_duplicate_names(irs_path, dup_irs_txt_file)
-save_duplicate_names(xml_path, dup_xml_txt_file)
+# Path to folders where to save unique files
+unique_DDCs_path = r''
+unique_Kernels_path = r''
+unique_Presets_path = r''
 
 # Function Call
-save_unique_files(vdc_path, new_vdc_path)
-save_unique_files(irs_path, new_irs_path)
-save_unique_files(xml_path, new_xml_path)
+save_duplicate_names(DDCs_path, dup_DDCs_txt_file)
+save_duplicate_names(Kernels_path, dup_Kernels_txt_file)
+save_duplicate_names(Presets_path, dup_Presets_txt_file)
+
+# Function Call
+save_unique_files(DDCs_path, unique_DDCs_path)
+save_unique_files(Kernels_path, unique_Kernels_path)
+save_unique_files(Presets_path, unique_Presets_path)
