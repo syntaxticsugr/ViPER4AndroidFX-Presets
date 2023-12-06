@@ -1,0 +1,56 @@
+Mode 2 (M2) = Speaker
+-------------
+
+# Mode
+mode="32775"
+
+# Master Switch
+enable="36868"
+# Master Gate (Limiter)
+gate_outputvolume="65586"
+gate_limiter="65588"
+
+# Playback Gain Control
+playbackgain_enable="65565"
+playbackgain_ratio="65566"
+playbackgain_volume="65567"
+playbackgain_maxscaler="65568"
+
+# FET Compressor
+fet_enable="65610"
+fet_threshold="65611"
+fet_ratio="65612"
+fet_knee="65613"
+fet_autoknee="65614"
+fet_gain="65615"
+fet_autogain="65616"
+fet_attack="65617"
+fet_autoattack="65618"
+fet_release="65619"
+fet_autorelease="65620"
+fet_kneemulti="65621"
+fet_maxattack="65622"
+fet_maxrelease="65623"
+fet_crest="65624"
+fet_adapt="65625"
+fet_noclipenable="65626"
+
+# FIR Equalizer
+fireq_enable="65551"
+fireq="65552"
+
+# Convolver
+convolver_enable="65538"
+convolver_kernel="65540;65541;65542"
+convolver_crosschannel="65543"
+
+# Reverberation
+reverberation_enable="65559"
+reverberation_roomsize="65560"
+reverberation_room_width="65561"
+reverberation_damp="65562"
+reverberation_wet="65563"
+reverberation_dry="65564"
+
+# Speaker Optimization
+speaker_optimization="65603"

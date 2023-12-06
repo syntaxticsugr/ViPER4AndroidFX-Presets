@@ -1,0 +1,102 @@
+Mode 1 (M1) = Headset, Bluetooth, USB
+-----------------------------
+
+# Mode
+mode="32775"
+
+# Master Switch
+enable="36868"
+# Master Gate (Limiter)
+gate_outputvolume="65586"
+gate_channelpan="65587"
+gate_limiter="65588"
+
+# Playback Gain Control
+playbackgain_enable="65565"
+playbackgain_ratio="65566"
+playbackgain_volume="65567"
+playbackgain_maxscaler="65568"
+
+# FET Compressor
+fet_enable="65610"
+fet_threshold="65611"
+fet_ratio="65612"
+fet_knee="65613"
+fet_autoknee="65614"
+fet_gain="65615"
+fet_autogain="65616"
+fet_attack="65617"
+fet_autoattack="65618"
+fet_release="65619"
+fet_autorelease="65620"
+fet_kneemulti="65621"
+fet_maxattack="65622"
+fet_maxrelease="65623"
+fet_crest="65624"
+fet_adapt="65625"
+fet_noclipenable="65626"
+
+# ViPER DDC
+ddc_enable="65546"
+ddc_device="65547"
+
+# Spectrum Extension
+vse_enable="65548"
+vse_value="65549;65550"
+
+# FIR Equalizer
+fireq_enable="65551"
+fireq="65552"
+
+# Convolver
+convolver_enable="65538"
+convolver_kernel="65540;65541;65542"
+convolver_crosschannel="65543"
+
+# Field Surround
+colorfulmusic_enable="65553"
+colorfulmusic_coeffs="65554;65556"
+colorfulmusic_midimage="65555"
+
+# Differential Surround
+diffsurr_enable="65557"
+diffsurr_delay="65558"
+
+# Headphone Surround +
+vhs_enable="65544"
+vhs_quality="65545"
+
+# Reverberation
+reverberation_enable="65559"
+reverberation_roomsize="65560"
+reverberation_room_width="65561"
+reverberation_damp="65562"
+reverberation_wet="65563"
+reverberation_dry="65564"
+
+# Dynamic System
+dynamicsystem_enable="65569"
+dynamicsystem_device="65570;65571;65572"
+dynamicsystem_strength="65573"
+
+# Tube Simulator (6N1J)
+tube_simulator_enable="65583"
+
+# ViPER Bass
+fidelity_bass_enable="65574"
+fidelity_bass_mode="65575"
+fidelity_bass_frequency="65576"
+fidelity_bass_gain="65577"
+
+# ViPER Clarity
+fidelity_clarity_enable="65578"
+fidelity_clarity_mode="65579"
+fidelity_clarity_gain="65580"
+
+# Auditory System Protection
+cure_enable="65581"
+cure_crossfeed="65582"
+
+# AnalogX
+analogx_enable="65584"
+analogx_mode="65585"
