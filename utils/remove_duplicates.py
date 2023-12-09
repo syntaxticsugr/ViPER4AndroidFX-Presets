@@ -35,7 +35,7 @@ def save_duplicate_names(folder_path, dup_txt_file):
     with open(dup_txt_file, 'w', encoding='utf-8') as dup_txt:
         for hash_value, files in duplicate_files.items():
             dup_txt.write(f"Hash: {hash_value}\n")
-            for file in files:
+            for file in sorted(files):
                 # dup_txt.write(f"\t- {file}\n")
                 dup_txt.write(f"{os.path.basename(file)}\n")
             dup_txt.write("\n")

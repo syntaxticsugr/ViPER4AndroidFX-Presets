@@ -44,6 +44,7 @@ def rename_presets(presets_folder, renamed_presets_folder):
             preset_new_name = regex_replace(sub_folder, replace_dict)
             preset_new_name = f"{preset_new_name}-{preset_old_name}"
             replace_dict = {
+                "---" : "-",
                 "--" : "-",
                 "bt_a2dp" : "bluetooth",
                 "usb_device" : "usb"
