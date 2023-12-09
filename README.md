@@ -2,7 +2,7 @@
 
 Largest collection of DDC(.vdc), Kernel(.irs) & Preset(.xml) for ViPER4AndroidFX
 
-[![Android](https://img.shields.io/badge/Platform-Android-green.svg?style=flat-square)](https://www.android.com) [![Release](https://img.shields.io/github/v/release/syntaxticsugr/ViPER4AndroidFXRepack-Presets?color=blue&label=Release&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases) [![Downloads](https://img.shields.io/github/downloads/syntaxticsugr/ViPER4AndroidFXRepack-Presets/total?color=brightgrey&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases)
+[![Android](https://img.shields.io/badge/Platform-Android-green.svg?style=flat-square)](https://www.android.com) [![Release](https://img.shields.io/github/v/release/syntaxticsugr/ViPER4AndroidFXRepack-Presets?color=blue&label=Release&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases) [![Downloads](https://img.shields.io/github/downloads/syntaxticsugr/ViPER4AndroidFXRepack-Presets/total?color=brightgrey&label=Downloads&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases)
 
 If you find my work useful Star ⭐ my repo : )
 <br>
@@ -30,8 +30,7 @@ All the `Preset(.xml)` are patched to work on the latest ViPER4AndroidFX
 
 ### Patch Information:
 - Added missing Features
-- Updated old Feature-Value pairs
-- Values of Master Limiter & Playback Gain Control are set to ViPER Defaults for all Presets (Subject To Change In Future)
+- Updated old Feature Key-Value pairs
 - Normalized values of the following ViPER features:
   - Field Surround
   - Differential Surround
@@ -39,19 +38,27 @@ All the `Preset(.xml)` are patched to work on the latest ViPER4AndroidFX
   - ViPER Bass
   - ViPER Clarity
 
-Check `utils` folder for Python Code and Steps involved in Renaming, Patching and more.
+** Values of Master Limiter & Playback Gain Control are set to ViPER Defaults for all the Presets. (Subject To Change In Future)
+
+Check `utils` folder for the Python Code and Steps involved in Renaming, Patching and more.
 
 <br>
 
 ---
 
-### v1.5.0
+### v1.6.0 Final Release
 
-|| Total | Uniques |
+| ⭐ | Total | Uniques |
 | --- | --- | --- |
 | **DDC** | 612 | 572 |
-| **Kernel** | 2187 | 1594 |
-| **Preset** | 1685 | 848 |
+| **Kernel** | 2183 | 1589 |
+| **Preset** | 1685 | 851 |
+
+<br>
+
+Fun Fact: There are some Presets with 30, 40 or even 50+ Duplicates but, one Preset in particular have 360+ Duplicates.
+<br>
+`Alternative-Medicine-Jmxc23-usb.xml` if only i was so popular : )
 
 <br>
 

@@ -1,8 +1,8 @@
-## How To Use
+## How To -
 
-Execute the following Python scripts in order with appropriate Input:
+Execute the following Python scripts in order:
 </br>
-(Use Output from One Step as Input to the Next Step)
+(Use the Output from One Step as Input to the Next)
 
 1. [rename_presets.py](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/blob/main/utils/rename_presets.py)
 
