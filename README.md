@@ -1,12 +1,16 @@
-# ViPER4AndroidFX Repack-Presets
+# ViPER4AndroidFX Presets
 
 Largest collection of DDC(.vdc), Kernel(.irs) & Preset(.xml) for ViPER4AndroidFX
 
 [![Android](https://img.shields.io/badge/Platform-Android-green.svg?style=flat-square)](https://www.android.com) [![Release](https://img.shields.io/github/v/release/syntaxticsugr/ViPER4AndroidFXRepack-Presets?color=blue&label=Release&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases) [![Downloads](https://img.shields.io/github/downloads/syntaxticsugr/ViPER4AndroidFXRepack-Presets/total?color=brightgrey&label=Downloads&style=flat-square)](https://github.com/syntaxticsugr/ViPER4AndroidFXRepack-Presets/releases)
 
-If you find my work useful Star ⭐ my repo : )
+If you find my work useful feel free to Star ⭐ my repo 😛
 <br>
-And if you use my work in your project, a credit would be nice : )
+And if you use my work in your project, a credit would be nice 🙂
+
+<br>
+
+\* The repo isn't abandoned, it will always be updated when necessary : )
 
 <br>
 
@@ -45,6 +49,8 @@ Check `utils` folder for the Python Code and Steps involved in Renaming, Patchin
 <br>
 
 ---
+
+<br>
 
 ### v1.6.0 Final Release
 
