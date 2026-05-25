@@ -1,6 +1,13 @@
-import gdown
+import sys
 from pathlib import Path
-from utils import create_directories
+
+sys.path.append(str(object=Path(__file__).resolve().parent.parent))
+
+
+import gdown
+
+from utils.create_directories import create_directories
+
 
 def download_files(download_dir: Path, file_ids: dict) -> None:
     """
@@ -15,16 +22,19 @@ def download_files(download_dir: Path, file_ids: dict) -> None:
     """
 
     for author, files in file_ids.items():
-        author_dir = download_dir/author
-        create_directories([author_dir])
+        author_dir = download_dir / author
+        create_directories(directories=[author_dir])
 
         for file_name, file_id in files.items():
-            out_file = author_dir/f'{file_name}.zip'
-            gdown.download(id=file_id, output=out_file)
+            out_file = author_dir / f"{file_name}.zip"
+            if out_file.exists():
+                print(f"Skipping (Already Downloaded): {out_file}")
+                continue
+            gdown.download(id=file_id, output=str(object=out_file))
+
 
 if __name__ == "__main__":
-
-    download_dir = Path('in')
+    download_dir = Path("in")
 
     # {
     #     'author': {
@@ -32,23 +42,17 @@ if __name__ == "__main__":
     #     }
     # }
     file_ids = {
-        'jadilson12': {
-            'Viper4Android-presets': '19pn29medRLzy8m9uPzkPmpvPSgHIsbz7'
+        "jadilson12": {"Viper4Android-presets": "19pn29medRLzy8m9uPzkPmpvPSgHIsbz7"},
+        "Joe0Bloggs": {"IRS": "19rEUl8QlBUWpgWrpaMxv2XnEVpZxXavV"},
+        "JohnFawkes": {"ViperIRS": "19thPV8G2eOohh-ihUJadEL3bwqwgvd-G"},
+        "programminghoch10": {
+            "ViperIRS": "1mu3l2mLuRlpuIIKUoA6a6Eg2Y27xEcrl",
+            "ViperVDC": "1oojAJp8ze7SzC5KHoGGGb6x1MIuSekjL",
         },
-        'Joe0Bloggs': {
-            'IRS': '19rEUl8QlBUWpgWrpaMxv2XnEVpZxXavV'
+        "WSTxda": {
+            "DDC": "1CKByuHZ_6AMHDC2NIo2H92ZEkR6Cv1SR",
+            "Kernel": "1y1HiV-SvzmqoYEzAIuztV-tya6DkYQzO",
         },
-        'JohnFawkes': {
-            'ViperIRS': '19thPV8G2eOohh-ihUJadEL3bwqwgvd-G'
-        },
-        'programminghoch10': {
-            'ViperIRS': '1mu3l2mLuRlpuIIKUoA6a6Eg2Y27xEcrl',
-            'ViperVDC': '1oojAJp8ze7SzC5KHoGGGb6x1MIuSekjL'
-        },
-        'WSTxda': {
-            'DDC': '1CKByuHZ_6AMHDC2NIo2H92ZEkR6Cv1SR',
-            'Kernel': '1y1HiV-SvzmqoYEzAIuztV-tya6DkYQzO'
-        }
     }
 
-    download_files(download_dir, file_ids)
+    download_files(download_dir=download_dir, file_ids=file_ids)
