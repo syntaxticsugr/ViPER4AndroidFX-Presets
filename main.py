@@ -5,11 +5,15 @@ from pathlib import Path
 from pipe.convert import convert_presets
 from pipe.extract import extract_archives
 from pipe.filter import filter_irs_vdc_xml
+from pipe.prune import prune_noop_presets
 from pipe.release import create_release
 from utils.create_directories import create_directories
 
 
 def process(input_dir: Path, output_dir: Path, version: str) -> None:
+    release_dir = output_dir / version
+    create_directories(directories=[release_dir])
+
     extract_dir = extract_archives(
         input_dir=input_dir,
         output_dir=output_dir,
@@ -22,7 +26,13 @@ def process(input_dir: Path, output_dir: Path, version: str) -> None:
         input_dir=xml_dir,
         output_dir=output_dir,
     )
-    release_dir = create_release(
+
+    prune_noop_presets(
+        xml_dir=preset_xml_dir,
+        json_dir=preset_json_dir,
+        report_dir=release_dir,
+    )
+    create_release(
         irs_dir=irs_dir,
         vdc_dir=vdc_dir,
         xml_dir=preset_xml_dir,
