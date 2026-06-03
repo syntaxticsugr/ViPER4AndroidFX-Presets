@@ -1,5 +1,6 @@
 from pathlib import Path
 
+
 def create_directories(directories: list[Path]) -> None:
     """
     Creates multiple directories specified in the input list.

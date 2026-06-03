@@ -1,5 +1,6 @@
 import hashlib
 
+
 def sha256(root) -> str:
     """
     Computes the SHA-256 hash of a file.
@@ -16,8 +17,8 @@ def sha256(root) -> str:
 
     hasher = hashlib.sha256()
 
-    with open(root, 'rb') as f:
-        for chunk in iter(lambda: f.read(1024), b''):
+    with open(file=root, mode="rb") as f:
+        for chunk in iter(lambda: f.read(1024), b""):
             hasher.update(chunk)
 
     return hasher.hexdigest()
