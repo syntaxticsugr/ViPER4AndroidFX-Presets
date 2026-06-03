@@ -75,7 +75,7 @@ def sort_requirements_files():
         print(f"Format: SortRequirements: {req_file.relative_to(_ROOT)}")
 
 
-def main():
+def format_codebase():
     parser = argparse.ArgumentParser(description="Format Python Code: RUFF")
     parser.add_argument(
         "folders",
@@ -117,4 +117,4 @@ def main():
 
 
 if __name__ == "__main__":
-    main()
+    format_codebase()
