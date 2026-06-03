@@ -22,6 +22,17 @@ def write_duplicates_to_file(hashes: defaultdict, filename: Path) -> None:
         dup_txt.writelines(duplicates)
 
 
+def hash_groups(hashes: defaultdict) -> list[list[str]]:
+    """Duplicate groups as in-code data: each a sorted list of file stems.
+
+    Mirrors ``write_duplicates_to_file``'s ordering (largest group first) so the
+    in-code groups and the ``dup_*.txt`` lines line up one-to-one.
+    """
+    groups = [sorted(names) for names in hashes.values()]
+    groups.sort(key=lambda names: (len(names), names[0]), reverse=True)
+    return groups
+
+
 def process_directory(directory: Path, hashes: defaultdict) -> None:
     for root, _, files in os.walk(top=directory):
         root = Path(root)
@@ -37,9 +48,17 @@ def process_directory(directory: Path, hashes: defaultdict) -> None:
 
 
 def check_duplicates(
-    irs_dir: Path, vdc_dir: Path, xml_dir: Path, output_dir: Path
-) -> tuple[Path, Path, Path]:
-    """Check for duplicate IRSs, VDCs & XMLs and list them in dup.txt"""
+    irs_dir: Path,
+    vdc_dir: Path,
+    xml_dir: Path,
+    output_dir: Path,
+) -> dict[str, list[list[str]]]:
+    """Check for duplicate IRSs, VDCs & XMLs.
+
+    Writes the human-readable ``dup_{irs,vdc,xml}.txt`` into ``output_dir`` and
+    returns the same grouping in code as ``{"irs": [...], "vdc": [...],
+    "xml": [...]}`` - each value a list of duplicate groups (sorted file stems).
+    """
 
     create_directories([output_dir])
 
@@ -55,4 +74,8 @@ def check_duplicates(
     write_duplicates_to_file(hashes=vdc_hashes, filename=dup_vdc_txt)
     write_duplicates_to_file(hashes=xml_hashes, filename=dup_xml_txt)
 
-    return (dup_irs_txt, dup_vdc_txt, dup_xml_txt)
+    return {
+        "irs": hash_groups(hashes=irs_hashes),
+        "vdc": hash_groups(hashes=vdc_hashes),
+        "xml": hash_groups(hashes=xml_hashes),
+    }

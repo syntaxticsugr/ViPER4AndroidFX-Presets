@@ -1,164 +1,316 @@
-import ast
-import os
 import shutil
 from dataclasses import dataclass
 from pathlib import Path
-from utils.create_directories import create_directories
-from utils.release_utils.check_duplicates import check_duplicates
-from utils.release_utils.list_missings import list_missings
-from utils.release_utils.search_in_xml import search_in_xml
 
-# Preset (.xml) files whose names contain any of these keywords
-# are considered original and selected from duplicates.
+from utils.create_directories import create_directories
+from utils.release.check_duplicates import check_duplicates
+from utils.release.list_missings import list_missings
+from utils.release.search_in_xml import search_in_xml
+
+# Preset files whose names contain any of these keywords are considered
+# original and selected from a group of duplicates.
 whitelist = [
-    "Bee", "Devarim", "Deiwid63", "Inner_Fidelity", "J144df",
-    "Joe_Meek", "Joemeek", "Percocet", "Roi007leaf", "Stormviper",
-    "Smeejaytee", "V4ARISE", "Japanese", "Joe0Bloggs"
+    "Bee",
+    "Devarim",
+    "Deiwid63",
+    "Inner_Fidelity",
+    "J144df",
+    "Joe_Meek",
+    "Joemeek",
+    "Percocet",
+    "Roi007leaf",
+    "Stormviper",
+    "Smeejaytee",
+    "V4ARISE",
+    "Japanese",
+    "Joe0Bloggs",
 ]
+
 
 @dataclass
 class ReleaseFiles:
-    """Represents the file structure for a release variant"""
+    """The on-disk file structure for one release variant."""
+
     base_dir: Path
     kernel_dir: Path
     ddc_dir: Path
     preset_dir: Path
 
     @classmethod
-    def create(cls, base_path: Path, variant_name: str) -> 'ReleaseFiles':
-        base_dir = base_path/variant_name
-        kernel_dir = base_dir/'Kernel'
-        ddc_dir = base_dir/'DDC'
-        preset_dir = base_dir/'Preset'
+    def create(cls, base_path: Path, variant_name: str) -> "ReleaseFiles":
+        base_dir = base_path / variant_name
+        kernel_dir = base_dir / "Kernel"
+        ddc_dir = base_dir / "DDC"
+        preset_dir = base_dir / "Preset"
 
-        create_directories([base_dir, kernel_dir, ddc_dir, preset_dir])
-        return cls(base_dir, kernel_dir, ddc_dir, preset_dir)
+        create_directories(directories=[base_dir, kernel_dir, ddc_dir, preset_dir])
+        return cls(
+            base_dir=base_dir,
+            kernel_dir=kernel_dir,
+            ddc_dir=ddc_dir,
+            preset_dir=preset_dir,
+        )
 
-def copy_directory_contents(source_dir: Path, dest_dir: Path) -> None:
-    """Copy all files from source directory to destination directory"""
-    for filename in os.listdir(source_dir):
-        shutil.copy2(source_dir/filename, dest_dir/filename)
 
-def process_xml_dependencies(xml_path: Path, irs_dir: Path, vdc_dir: Path, target_irs: Path, target_vdc: Path) -> None:
-    """Process and copy IRS/VDC files referenced in XML"""
-    # Check for IRS dependency
-    if irs_path := search_in_xml(xml_path, "65540;65541;65542"):
-        try:
-            shutil.copy2(irs_dir/irs_path, target_irs)
-        except (FileNotFoundError, shutil.Error):
-            pass
+@dataclass
+class PresetFormat:
+    """A preset format to materialise a release in."""
 
-    # Check for VDC dependency
-    if vdc_path := search_in_xml(xml_path, "65547"):
-        try:
-            shutil.copy2(vdc_dir/vdc_path, target_vdc)
-        except (FileNotFoundError, shutil.Error):
-            pass
+    name: str  # release sub-folder, e.g. "XML" / "JSON"
+    src_dir: Path  # where the converted preset files live
+    ext: str  # preset file extension, e.g. ".xml" / ".json"
 
-def select_whitelist_xml(xml_list: list[str], whitelist: list[str]) -> str:
+
+@dataclass
+class Selection:
+    """Format-independent set of names that make up a release variant.
+
+    Holds bare file stems (no extension), so the same selection can be
+    materialised as XML or JSON. Kernels/DDCs are companion ``.irs``/``.vdc``
+    files, shared by both formats.
     """
-    Select XML name from the list based on whitelist criteria.
-    Returns the first matching name after sorting, or the first name in original list if no matches.
+
+    presets: list[str]
+    kernels: list[str]
+    ddcs: list[str]
+
+
+def _stems(directory: Path, ext: str) -> list[str]:
+    """Sorted stems of ``*ext`` files directly inside ``directory``."""
+    return sorted(
+        p.stem for p in directory.iterdir() if p.is_file() and p.suffix == ext
+    )
+
+
+def select_whitelist_preset(group: list[str], whitelist: list[str]) -> str:
+    """Pick one name from a duplicate group of preset names.
+
+    Returns the first (sorted) name containing a whitelist keyword, or the first
+    name in the group when none match.
     """
-    # Find all names containing whitelist words
     matching_names = [
-        name for name in xml_list
+        name
+        for name in group
         if any(word.lower() in name.lower() for word in whitelist)
     ]
-
-    # If we found matches, sort them and return the first one
     if matching_names:
         return sorted(matching_names)[0]
+    return group[0]
 
-    # If no matches, return the first name from original list
-    return xml_list[0]
 
-def create_full_release(source: ReleaseFiles, release_dir: Path) -> ReleaseFiles:
-    """Create full release"""
-    full = ReleaseFiles.create(release_dir, 'Full')
+def preset_dependencies(xml_path: Path) -> tuple[str | None, str | None]:
+    """Return the (kernel, ddc) file stems a preset references, if any."""
+    found = search_in_xml(
+        xml=xml_path,
+        keys=["65540;65541;65542", "65547"],
+    )
+    irs = found["65540;65541;65542"]
+    vdc = found["65547"]
+    return (
+        Path(irs).stem if irs else None,
+        Path(vdc).stem if vdc else None,
+    )
 
-    copy_directory_contents(source.kernel_dir, full.kernel_dir)
-    copy_directory_contents(source.ddc_dir, full.ddc_dir)
-    copy_directory_contents(source.preset_dir, full.preset_dir)
 
-    return full
+def select_full(
+    xml_src: Path,
+    irs_dir: Path,
+    vdc_dir: Path,
+) -> Selection:
+    """Full variant - every preset, kernel & DDC."""
+    return Selection(
+        presets=_stems(directory=xml_src, ext=".xml"),
+        kernels=_stems(directory=irs_dir, ext=".irs"),
+        ddcs=_stems(directory=vdc_dir, ext=".vdc"),
+    )
 
-def create_lite_release(source: ReleaseFiles, release_dir: Path, dup_files: tuple[Path, Path, Path]) -> ReleaseFiles:
-    """Create lite release"""
-    lite = ReleaseFiles.create(release_dir, 'Lite')
-    _, _, dup_xml_path = dup_files
 
-    with open(dup_xml_path, 'r') as f:
-        for line in f:
-            parts = line.split(' : ')
-            count = int(parts[0])  # Number of duplicates
-            xml_list = ast.literal_eval(parts[-1])
+def select_lite(
+    preset_groups: list[list[str]],
+    xml_src: Path,
+    irs_dir: Path,
+    vdc_dir: Path,
+) -> Selection:
+    """Lite variant - one preset per duplicate group, plus its companions."""
+    presets: list[str] = []
+    for group in preset_groups:
+        name = (
+            select_whitelist_preset(group=group, whitelist=whitelist)
+            if len(group) > 1
+            else group[0]
+        )
+        presets.append(name)
 
-            # Only apply whitelist selection for groups with duplicates
-            if count > 1:
-                xml_name = select_whitelist_xml(xml_list, whitelist)
-            else:
-                xml_name = xml_list[0]
+    kernels: set[str] = set()
+    ddcs: set[str] = set()
+    for name in presets:
+        irs, vdc = preset_dependencies(xml_path=xml_src / f"{name}.xml")
+        if irs and (irs_dir / f"{irs}.irs").is_file():
+            kernels.add(irs)
+        if vdc and (vdc_dir / f"{vdc}.vdc").is_file():
+            ddcs.add(vdc)
 
-            xml_path = source.preset_dir/f'{xml_name}.xml'
+    return Selection(
+        presets=sorted(presets),
+        kernels=sorted(kernels),
+        ddcs=sorted(ddcs),
+    )
 
-            # Copy XML and its dependencies
-            shutil.copy2(xml_path, lite.preset_dir)
-            process_xml_dependencies(xml_path, source.kernel_dir, source.ddc_dir, lite.kernel_dir, lite.ddc_dir)
 
-    return lite
+def select_recommended(
+    lite: Selection,
+    irs_groups: list[list[str]],
+    vdc_groups: list[list[str]],
+) -> Selection:
+    """Recommended variant - Lite presets, plus one of every unique kernel/DDC.
 
-def create_recommended_release(full: ReleaseFiles, lite: ReleaseFiles, release_dir: Path, dup_files: tuple[Path, Path, Path]) -> ReleaseFiles:
-    """Create recommended release"""
-    recommended = ReleaseFiles.create(release_dir, 'Recommended')
-    dup_irs_path, dup_vdc_path, _ = dup_files
+    Keeps Lite's preset selection and its companions, then tops up the
+    kernels/DDCs so every unique ``.irs``/``.vdc`` (one per duplicate group) is
+    represented at least once.
+    """
+    kernels = set(lite.kernels)
+    for group in irs_groups:
+        if not kernels.intersection(group):
+            kernels.add(group[0])
 
-    # Start with lite contents
-    copy_directory_contents(lite.kernel_dir, recommended.kernel_dir)
-    copy_directory_contents(lite.ddc_dir, recommended.ddc_dir)
-    copy_directory_contents(lite.preset_dir, recommended.preset_dir)
+    ddcs = set(lite.ddcs)
+    for group in vdc_groups:
+        if not ddcs.intersection(group):
+            ddcs.add(group[0])
 
-    # Process IRS duplicates
-    present_irs = {Path(f).stem for f in os.listdir(recommended.kernel_dir)}
-    with open(dup_irs_path, 'r') as f:
-        for line in f:
-            irs_list = ast.literal_eval(line.split(' : ')[-1])
-            if not any(irs in present_irs for irs in irs_list):
-                shutil.copy2(full.kernel_dir/f'{irs_list[0]}.irs', recommended.kernel_dir)
+    return Selection(
+        presets=list(lite.presets),
+        kernels=sorted(kernels),
+        ddcs=sorted(ddcs),
+    )
 
-    # Process VDC duplicates
-    present_vdc = {Path(f).stem for f in os.listdir(recommended.ddc_dir)}
-    with open(dup_vdc_path, 'r') as f:
-        for line in f:
-            vdc_list = ast.literal_eval(line.split(' : ')[-1])
-            if not any(vdc in present_vdc for vdc in vdc_list):
-                shutil.copy2(full.ddc_dir/f'{vdc_list[0]}.vdc', recommended.ddc_dir)
 
-    return recommended
+def materialize(
+    selection: Selection,
+    dest: ReleaseFiles,
+    fmt: PresetFormat,
+    irs_dir: Path,
+    vdc_dir: Path,
+) -> list[str]:
+    """Copy a selection into ``dest`` for ``fmt``. Returns missing preset names."""
+    missing: list[str] = []
 
-def create_release(irs_dir: Path, vdc_dir: Path, xml_dir: Path, output_dir: Path, version: str) -> Path:
-    """Create new release with 3 variants - Full, Lite & Recommended"""
+    for name in selection.presets:
+        src = fmt.src_dir / f"{name}{fmt.ext}"
+        if src.is_file():
+            shutil.copy2(src=src, dst=dest.preset_dir / src.name)
+        else:
+            missing.append(name)
+
+    for irs in selection.kernels:
+        src = irs_dir / f"{irs}.irs"
+        if src.is_file():
+            shutil.copy2(src=src, dst=dest.kernel_dir / src.name)
+
+    for vdc in selection.ddcs:
+        src = vdc_dir / f"{vdc}.vdc"
+        if src.is_file():
+            shutil.copy2(src=src, dst=dest.ddc_dir / src.name)
+
+    return missing
+
+
+def create_release(
+    irs_dir: Path,
+    vdc_dir: Path,
+    xml_dir: Path,
+    json_dir: Path,
+    output_dir: Path,
+    version: str,
+) -> Path:
+    """Create a release with 3 variants - Full, Lite & Recommended.
+
+    The variant selections (which presets / kernels / DDCs each contains) are
+    computed once, in code, from the duplicate analysis, then materialised for
+    every preset format: the 2.7.2+ XML under ``<version>/XML`` and the modern
+    ``com.llsl.viper4android`` JSON under ``<version>/JSON``. Both formats share
+    one selection, so they stay in lockstep.
+    """
     print(f"Creating Release {version} ...")
 
-    release_dir = output_dir/version
-    create_directories([release_dir])
+    release_dir = output_dir / version
+    create_directories(directories=[release_dir])
 
-    # Create source structure
-    source = ReleaseFiles(release_dir, irs_dir, vdc_dir, xml_dir)
+    # --- Collect names (in code, and as dup_*.txt) -------------------------
+    # Duplicate groups drive the Lite/Recommended selection; check_duplicates
+    # also writes the canonical dup_{irs,vdc,xml}.txt at the release root.
+    groups = check_duplicates(
+        irs_dir=irs_dir,
+        vdc_dir=vdc_dir,
+        xml_dir=xml_dir,
+        output_dir=release_dir,
+    )
+    list_missings(
+        irs_dir=irs_dir,
+        vdc_dir=vdc_dir,
+        xml_dir=xml_dir,
+        output_dir=release_dir,
+    )
 
-    # Create full release
-    full = create_full_release(source, release_dir)
-    list_missings(full.kernel_dir, full.ddc_dir, full.preset_dir, full.base_dir)
-    dup_files = check_duplicates(full.kernel_dir, full.ddc_dir, full.preset_dir, full.base_dir)
+    full = select_full(
+        xml_src=xml_dir,
+        irs_dir=irs_dir,
+        vdc_dir=vdc_dir,
+    )
+    lite = select_lite(
+        preset_groups=groups["xml"],
+        xml_src=xml_dir,
+        irs_dir=irs_dir,
+        vdc_dir=vdc_dir,
+    )
+    recommended = select_recommended(
+        lite=lite,
+        irs_groups=groups["irs"],
+        vdc_groups=groups["vdc"],
+    )
+    selections = {"Full": full, "Lite": lite, "Recommended": recommended}
 
-    # Create lite release
-    lite = create_lite_release(source, release_dir, dup_files)
-    list_missings(lite.kernel_dir, lite.ddc_dir, lite.preset_dir, lite.base_dir)
-    check_duplicates(lite.kernel_dir, lite.ddc_dir, lite.preset_dir, lite.base_dir)
+    # --- Materialise every variant for every format, from the same names ---
+    formats = [
+        PresetFormat(name="XML", src_dir=xml_dir, ext=".xml"),
+        PresetFormat(name="JSON", src_dir=json_dir, ext=".json"),
+    ]
 
-    # Create recommended release
-    recommended = create_recommended_release(full, lite, release_dir, dup_files)
-    list_missings(recommended.kernel_dir, recommended.ddc_dir, recommended.preset_dir, recommended.base_dir)
-    check_duplicates(recommended.kernel_dir, recommended.ddc_dir, recommended.preset_dir, recommended.base_dir)
+    for fmt in formats:
+        print(f"Creating {fmt.name} Release ...")
+        fmt_dir = release_dir / fmt.name
+
+        for variant_name, selection in selections.items():
+            variant = ReleaseFiles.create(
+                base_path=fmt_dir,
+                variant_name=variant_name,
+            )
+            missing = materialize(
+                selection=selection,
+                dest=variant,
+                fmt=fmt,
+                irs_dir=irs_dir,
+                vdc_dir=vdc_dir,
+            )
+            if missing:
+                print(
+                    f"  [{fmt.name}/{variant_name}] no {fmt.ext} preset for: "
+                    f"{', '.join(missing)}"
+                )
+
+            # Per-variant diagnostics parse the <map> format, so XML only.
+            if fmt.name == "XML":
+                list_missings(
+                    irs_dir=variant.kernel_dir,
+                    vdc_dir=variant.ddc_dir,
+                    xml_dir=variant.preset_dir,
+                    output_dir=variant.base_dir,
+                )
+                check_duplicates(
+                    irs_dir=variant.kernel_dir,
+                    vdc_dir=variant.ddc_dir,
+                    xml_dir=variant.preset_dir,
+                    output_dir=variant.base_dir,
+                )
 
     return release_dir
