@@ -1,3 +1,4 @@
+import shutil
 import sys
 from pathlib import Path
 
@@ -36,6 +37,9 @@ def main(input_dir: Path, output_dir: Path, version: str) -> None:
     if not input_dir.is_dir():
         print(f"Error: The input directory '{input_dir}' does not exist.")
         sys.exit(status=1)
+
+    if output_dir.exists():
+        shutil.rmtree(path=output_dir)
 
     create_directories(directories=[output_dir])
     process(
