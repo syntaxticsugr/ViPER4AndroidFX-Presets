@@ -350,7 +350,11 @@ def convert_xml_presets(input_dir: Path, output_dir: Path) -> Path:
                                     if ("65540;65541;65542" in old_line) or (
                                         "65591;65592;65593" in old_line
                                     ):
-                                        # Correcting '&' in Kernel(.irs) names
+                                        # Correct '&' corruption in Kernel(.irs) names,
+                                        # and blank placeholder values. "Kernel" must
+                                        # match as an EXACT value (>Kernel</string>),
+                                        # not a substring, or real names like
+                                        # "TubeKernel.irs" get mangled.
                                         old_line = (
                                             old_line.replace("></string>amp;", "&amp;")
                                             .replace(
@@ -358,7 +362,7 @@ def convert_xml_presets(input_dir: Path, output_dir: Path) -> Path:
                                                 "&amp;",
                                             )
                                             .replace("Select impulse response file", "")
-                                            .replace("Kernel", "")
+                                            .replace(">Kernel</string>", "></string>")
                                             .replace("Choose Impulse Response", "")
                                             .replace(
                                                 "Selecione o arquivo de impulso de resposta",
