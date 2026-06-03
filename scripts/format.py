@@ -25,10 +25,32 @@ def run(
     )
 
 
+def filter_ignored(paths: list[Path]) -> list[Path]:
+    if not paths:
+        return paths
+
+    # NUL-delimited I/O (-z) so non-ASCII paths are echoed verbatim instead
+    # of C-quoted, which would otherwise break the string match below.
+    try:
+        result = subprocess.run(
+            args=["git", "check-ignore", "--stdin", "-z"],
+            input="\0".join(str(object=path) for path in paths),
+            text=True,
+            capture_output=True,
+            cwd=_ROOT,
+            shell=_WINDOWS,
+        )
+    except FileNotFoundError:
+        return paths  # format everything
+
+    ignored = {entry for entry in result.stdout.split("\0") if entry}
+    return [path for path in paths if str(object=path) not in ignored]
+
+
 def format_xml_files() -> None:
     formatted = 0
 
-    for file_path in sorted(_ROOT.rglob(pattern="*.xml")):
+    for file_path in filter_ignored(paths=sorted(_ROOT.rglob(pattern="*.xml"))):
         result = run(
             cmd=["xmllint", "--format", str(object=file_path)],
             check=False,
@@ -43,7 +65,7 @@ def format_xml_files() -> None:
 
 
 def sort_requirements_files():
-    req_files = sorted(_ROOT.rglob(pattern="requirements*.txt"))
+    req_files = filter_ignored(paths=sorted(_ROOT.rglob(pattern="requirements*.txt")))
     for req_file in req_files:
         lines = req_file.read_text().splitlines()
         sorted_lines = sorted(lines, key=lambda line: line.lower())
