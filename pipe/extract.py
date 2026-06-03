@@ -25,6 +25,10 @@ def extract_archive(archive_path: Path, extract_to: Path) -> bool:
 
 def copy_file(source: Path, destination: Path) -> None:
     """Copy a single file, creating parent directories if needed."""
+    # Files extracted from archives already live inside the extract tree, so
+    # their destination resolves to themselves. Skip those self-copies.
+    if source.resolve() == destination.resolve():
+        return
     try:
         create_directories(directories=[destination.parent])
         shutil.copy2(src=source, dst=destination)
