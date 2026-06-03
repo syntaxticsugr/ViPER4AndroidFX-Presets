@@ -53,29 +53,30 @@ def check_duplicates(
     xml_dir: Path,
     output_dir: Path,
 ) -> dict[str, list[list[str]]]:
-    """Check for duplicate IRSs, VDCs & XMLs.
+    """Check for duplicate Kernels, DDCs & Presets.
 
-    Writes the human-readable ``dup_{irs,vdc,xml}.txt`` into ``output_dir`` and
-    returns the same grouping in code as ``{"irs": [...], "vdc": [...],
-    "xml": [...]}`` - each value a list of duplicate groups (sorted file stems).
+    Writes the human-readable ``dup_{kernel,ddc,preset}.txt`` into ``output_dir``
+    and returns the same grouping in code as ``{"kernel": [...], "ddc": [...],
+    "preset": [...]}`` - each value a list of duplicate groups (sorted file
+    stems). Kernels are the ``.irs``, DDCs the ``.vdc``, Presets the ``.xml``.
     """
 
     create_directories([output_dir])
 
-    irs_hashes, dup_irs_txt = defaultdict(set), output_dir / "dup_irs.txt"
-    vdc_hashes, dup_vdc_txt = defaultdict(set), output_dir / "dup_vdc.txt"
-    xml_hashes, dup_xml_txt = defaultdict(set), output_dir / "dup_xml.txt"
+    kernel_hashes, dup_kernel_txt = defaultdict(set), output_dir / "dup_kernel.txt"
+    ddc_hashes, dup_ddc_txt = defaultdict(set), output_dir / "dup_ddc.txt"
+    preset_hashes, dup_preset_txt = defaultdict(set), output_dir / "dup_preset.txt"
 
-    process_directory(directory=irs_dir, hashes=irs_hashes)
-    process_directory(directory=vdc_dir, hashes=vdc_hashes)
-    process_directory(directory=xml_dir, hashes=xml_hashes)
+    process_directory(directory=irs_dir, hashes=kernel_hashes)
+    process_directory(directory=vdc_dir, hashes=ddc_hashes)
+    process_directory(directory=xml_dir, hashes=preset_hashes)
 
-    write_duplicates_to_file(hashes=irs_hashes, filename=dup_irs_txt)
-    write_duplicates_to_file(hashes=vdc_hashes, filename=dup_vdc_txt)
-    write_duplicates_to_file(hashes=xml_hashes, filename=dup_xml_txt)
+    write_duplicates_to_file(hashes=kernel_hashes, filename=dup_kernel_txt)
+    write_duplicates_to_file(hashes=ddc_hashes, filename=dup_ddc_txt)
+    write_duplicates_to_file(hashes=preset_hashes, filename=dup_preset_txt)
 
     return {
-        "irs": hash_groups(hashes=irs_hashes),
-        "vdc": hash_groups(hashes=vdc_hashes),
-        "xml": hash_groups(hashes=xml_hashes),
+        "kernel": hash_groups(hashes=kernel_hashes),
+        "ddc": hash_groups(hashes=ddc_hashes),
+        "preset": hash_groups(hashes=preset_hashes),
     }

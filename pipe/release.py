@@ -29,7 +29,12 @@ whitelist = [
 
 @dataclass
 class ReleaseFiles:
-    """The on-disk file structure for one release variant."""
+    """The on-disk file structure for one release variant.
+
+    ``Kernel`` and ``DDC`` hold the format-independent ``.irs``/``.vdc``
+    companions, shared by every preset format. ``Preset`` is the parent for the
+    per-format subfolders (``Preset/XML``, ``Preset/JSON``).
+    """
 
     base_dir: Path
     kernel_dir: Path
@@ -185,23 +190,17 @@ def select_recommended(
     )
 
 
-def materialize(
+def copy_companions(
     selection: Selection,
     dest: ReleaseFiles,
-    fmt: PresetFormat,
     irs_dir: Path,
     vdc_dir: Path,
-) -> list[str]:
-    """Copy a selection into ``dest`` for ``fmt``. Returns missing preset names."""
-    missing: list[str] = []
+) -> None:
+    """Copy a selection's kernels & DDCs into ``dest``.
 
-    for name in selection.presets:
-        src = fmt.src_dir / f"{name}{fmt.ext}"
-        if src.is_file():
-            shutil.copy2(src=src, dst=dest.preset_dir / src.name)
-        else:
-            missing.append(name)
-
+    Kernels (``.irs``) and DDCs (``.vdc``) are format-independent, so they are
+    copied once per variant and shared by every preset format.
+    """
     for irs in selection.kernels:
         src = irs_dir / f"{irs}.irs"
         if src.is_file():
@@ -211,6 +210,25 @@ def materialize(
         src = vdc_dir / f"{vdc}.vdc"
         if src.is_file():
             shutil.copy2(src=src, dst=dest.ddc_dir / src.name)
+
+
+def copy_presets(
+    selection: Selection,
+    preset_dest: Path,
+    fmt: PresetFormat,
+) -> list[str]:
+    """Copy a selection's presets for ``fmt`` into ``preset_dest``.
+
+    Returns the names with no matching ``fmt.ext`` source file.
+    """
+    missing: list[str] = []
+
+    for name in selection.presets:
+        src = fmt.src_dir / f"{name}{fmt.ext}"
+        if src.is_file():
+            shutil.copy2(src=src, dst=preset_dest / src.name)
+        else:
+            missing.append(name)
 
     return missing
 
@@ -226,19 +244,20 @@ def create_release(
     """Create a release with 3 variants - Full, Lite & Recommended.
 
     The variant selections (which presets / kernels / DDCs each contains) are
-    computed once, in code, from the duplicate analysis, then materialised for
-    every preset format: the 2.7.2+ XML under ``<version>/XML`` and the modern
-    ``com.llsl.viper4android`` JSON under ``<version>/JSON``. Both formats share
-    one selection, so they stay in lockstep.
+    computed once, in code, from the duplicate analysis, then materialised under
+    ``<version>/<variant>``. Kernels/DDCs are format-independent, so they are
+    copied once per variant into ``Kernel``/``DDC``; the presets are written per
+    format into ``Preset/XML`` (2.7.2+ XML) and ``Preset/JSON`` (the modern
+    ``com.llsl.viper4android`` JSON). Both formats share one selection, so they
+    stay in lockstep, and the shared companions are never duplicated.
     """
     print(f"Creating Release {version} ...")
 
     release_dir = output_dir / version
-    create_directories(directories=[release_dir])
 
     # --- Collect names (in code, and as dup_*.txt) -------------------------
     # Duplicate groups drive the Lite/Recommended selection; check_duplicates
-    # also writes the canonical dup_{irs,vdc,xml}.txt at the release root.
+    # also writes the canonical dup_{kernel,ddc,preset}.txt at the release root.
     groups = check_duplicates(
         irs_dir=irs_dir,
         vdc_dir=vdc_dir,
@@ -258,59 +277,66 @@ def create_release(
         vdc_dir=vdc_dir,
     )
     lite = select_lite(
-        preset_groups=groups["xml"],
+        preset_groups=groups["preset"],
         xml_src=xml_dir,
         irs_dir=irs_dir,
         vdc_dir=vdc_dir,
     )
     recommended = select_recommended(
         lite=lite,
-        irs_groups=groups["irs"],
-        vdc_groups=groups["vdc"],
+        irs_groups=groups["kernel"],
+        vdc_groups=groups["ddc"],
     )
     selections = {"Full": full, "Lite": lite, "Recommended": recommended}
 
-    # --- Materialise every variant for every format, from the same names ---
+    # --- Materialise every variant, sharing kernels/DDCs across formats ----
     formats = [
         PresetFormat(name="XML", src_dir=xml_dir, ext=".xml"),
         PresetFormat(name="JSON", src_dir=json_dir, ext=".json"),
     ]
 
-    for fmt in formats:
-        print(f"Creating {fmt.name} Release ...")
-        fmt_dir = release_dir / fmt.name
+    for variant_name, selection in selections.items():
+        print(f"Creating {variant_name} Variant ...")
+        variant = ReleaseFiles.create(
+            base_path=release_dir,
+            variant_name=variant_name,
+        )
 
-        for variant_name, selection in selections.items():
-            variant = ReleaseFiles.create(
-                base_path=fmt_dir,
-                variant_name=variant_name,
-            )
-            missing = materialize(
+        # Kernels & DDCs are format-independent — copy once per variant.
+        copy_companions(
+            selection=selection,
+            dest=variant,
+            irs_dir=irs_dir,
+            vdc_dir=vdc_dir,
+        )
+
+        # Presets differ by format — one subfolder each under Preset/.
+        for fmt in formats:
+            preset_dest = variant.preset_dir / fmt.name
+            create_directories(directories=[preset_dest])
+            missing = copy_presets(
                 selection=selection,
-                dest=variant,
+                preset_dest=preset_dest,
                 fmt=fmt,
-                irs_dir=irs_dir,
-                vdc_dir=vdc_dir,
             )
             if missing:
                 print(
-                    f"  [{fmt.name}/{variant_name}] no {fmt.ext} preset for: "
-                    f"{', '.join(missing)}"
+                    f"  [{variant_name}/Preset/{fmt.name}] no {fmt.ext} preset "
+                    f"for: {', '.join(missing)}"
                 )
 
-            # Per-variant diagnostics parse the <map> format, so XML only.
-            if fmt.name == "XML":
-                list_missings(
-                    irs_dir=variant.kernel_dir,
-                    vdc_dir=variant.ddc_dir,
-                    xml_dir=variant.preset_dir,
-                    output_dir=variant.base_dir,
-                )
-                check_duplicates(
-                    irs_dir=variant.kernel_dir,
-                    vdc_dir=variant.ddc_dir,
-                    xml_dir=variant.preset_dir,
-                    output_dir=variant.base_dir,
-                )
+        # Per-variant diagnostics parse the <map> format, so XML presets only.
+        list_missings(
+            irs_dir=variant.kernel_dir,
+            vdc_dir=variant.ddc_dir,
+            xml_dir=variant.preset_dir / "XML",
+            output_dir=variant.base_dir,
+        )
+        check_duplicates(
+            irs_dir=variant.kernel_dir,
+            vdc_dir=variant.ddc_dir,
+            xml_dir=variant.preset_dir / "XML",
+            output_dir=variant.base_dir,
+        )
 
     return release_dir
