@@ -32,21 +32,33 @@ def copy_file(
     file_name: str,
     file_extension: str,
     hashes: defaultdict[set],
-    counts: defaultdict[int],
+    used: set[str],
 ) -> None:
-    """Copy file to target directory with hash-based deduplication and name conflict resolution."""
+    """Copy file into ``target_dir``, de-duplicating identical files and resolving
+    name conflicts case-insensitively.
+
+    A file is skipped only when an identical copy (same sha256) under the same
+    name was already taken. Otherwise it is written as ``file_name``; if that name
+    is already used - compared case-insensitively, so it is collision-safe on
+    case-insensitive filesystems (macOS/Windows) too - a ``_2``, ``_3``, ... suffix
+    is appended until the name is free. This guarantees no file is ever silently
+    overwritten (e.g. ``SHURE SE215`` and ``Shure SE215`` both survive).
+    """
     file_hash = sha256(root=full_path)
 
-    if file_name not in hashes[file_hash]:
-        hashes[file_hash].add(file_name)
+    if file_name in hashes[file_hash]:
+        return
 
-        name_repeat_count = counts[file_name] + 1
-        counts[file_name] = name_repeat_count
+    hashes[file_hash].add(file_name)
 
-        if 1 < name_repeat_count:
-            file_name = f"{file_name}_{name_repeat_count}"
+    unique_name = file_name
+    repeat = 1
+    while unique_name.lower() in used:
+        repeat += 1
+        unique_name = f"{file_name}_{repeat}"
+    used.add(unique_name.lower())
 
-        shutil.copy2(src=full_path, dst=f"{target_dir / file_name}{file_extension}")
+    shutil.copy2(src=full_path, dst=f"{target_dir / unique_name}{file_extension}")
 
 
 def filter_irs_vdc_xml(input_dir: Path, output_dir: Path) -> Path:
@@ -59,9 +71,9 @@ def filter_irs_vdc_xml(input_dir: Path, output_dir: Path) -> Path:
     xml_dir = filter_dir / "xml"
     create_directories(directories=[filter_dir, irs_dir, vdc_dir, xml_dir])
 
-    irs_hashes, irs_counts = defaultdict(set), defaultdict(int)
-    vdc_hashes, vdc_counts = defaultdict(set), defaultdict(int)
-    xml_hashes, xml_counts = defaultdict(set), defaultdict(int)
+    irs_hashes, irs_used = defaultdict(set), set()
+    vdc_hashes, vdc_used = defaultdict(set), set()
+    xml_hashes, xml_used = defaultdict(set), set()
 
     for root, _, files in os.walk(top=input_dir):
         root = Path(root)
@@ -79,7 +91,7 @@ def filter_irs_vdc_xml(input_dir: Path, output_dir: Path) -> Path:
                     file_name=file_name,
                     file_extension=file_extension,
                     hashes=irs_hashes,
-                    counts=irs_counts,
+                    used=irs_used,
                 )
 
             elif file_extension == ".vdc":
@@ -89,7 +101,7 @@ def filter_irs_vdc_xml(input_dir: Path, output_dir: Path) -> Path:
                     file_name=file_name,
                     file_extension=file_extension,
                     hashes=vdc_hashes,
-                    counts=vdc_counts,
+                    used=vdc_used,
                 )
 
             elif file_extension == ".xml":
@@ -126,7 +138,7 @@ def filter_irs_vdc_xml(input_dir: Path, output_dir: Path) -> Path:
                         file_name=new_file_name,
                         file_extension=file_extension,
                         hashes=xml_hashes,
-                        counts=xml_counts,
+                        used=xml_used,
                     )
 
     return (irs_dir, vdc_dir, xml_dir)

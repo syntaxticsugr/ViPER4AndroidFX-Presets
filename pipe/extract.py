@@ -24,12 +24,20 @@ def extract_archive(archive_path: Path, extract_to: Path) -> bool:
 
 
 def copy_file(source: Path, destination: Path) -> None:
-    """Copy a single file, creating parent directories if needed."""
-    # Files extracted from archives already live inside the extract tree, so
-    # their destination resolves to themselves. Skip those self-copies.
+    """Copy a single file, creating parent directories if needed.
+
+    Files extracted from archives already live inside the extract tree, so their
+    destination resolves to themselves - those self-copies are skipped. When a
+    *different* file already occupies the destination (including a case-only
+    match on a case-insensitive filesystem, e.g. ``X.vdc`` vs ``x.vdc`` merged
+    into one folder), a ``_2``, ``_3``, ... suffix is appended so the existing
+    file is never overwritten.
+    """
+    # Self-copy: the file already lives at its destination.
     if source.resolve() == destination.resolve():
         return
     try:
+        destination = get_unique_file(file_path=destination)
         create_directories(directories=[destination.parent])
         shutil.copy2(src=source, dst=destination)
     except Exception as e:
@@ -44,6 +52,25 @@ def get_unique_directory(base_path: Path) -> Path:
     counter = 2
     while True:
         new_path = Path(f"{base_path}_{counter}")
+        if not new_path.exists():
+            return new_path
+        counter += 1
+
+
+def get_unique_file(file_path: Path) -> Path:
+    """Generate a unique file path by appending a counter before the suffix.
+
+    ``Path.exists`` is case-insensitive on macOS/Windows, so this also avoids
+    overwriting a file whose name differs only by case.
+    """
+    if not file_path.exists():
+        return file_path
+
+    counter = 2
+    while True:
+        new_path = file_path.with_name(
+            name=f"{file_path.stem}_{counter}{file_path.suffix}"
+        )
         if not new_path.exists():
             return new_path
         counter += 1
