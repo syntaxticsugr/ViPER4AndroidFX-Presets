@@ -1,0 +1,15 @@
+[project]
+name = "viper4android-presets"
+version = "3.0.0"
+dependencies = [
+    "gdown",
+    "patool",
+]
+
+[dependency-groups]
+dev = [
+    "ruff",
+]
+
+[tool.uv]
+package = false

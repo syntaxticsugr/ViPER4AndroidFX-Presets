@@ -1,0 +1,8 @@
+{
+  "name": "viper4android-presets",
+  "version": "3.0.0",
+  "private": true,
+  "devDependencies": {
+    "prettier": "3.9.4"
+  }
+}

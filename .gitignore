@@ -219,10 +219,11 @@ __marimo__/
 # Streamlit
 .streamlit/secrets.toml
 
-# Source Archives
-in/*
-!in/download.py
-!in/README.md
+# MacOS
+.DS_Store
+
+# Node
+node_modules/
 
 # Output Directory
 out/
