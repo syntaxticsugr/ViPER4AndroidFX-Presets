@@ -11,7 +11,7 @@ Value scales were reconciled against the new app source:
     split into the ``ds*`` keys
   - master gate / channel pan / limiter / AGC values are kept at the baseline
     defaults (the XML converter always leaves these at ViPER defaults)
-  - Spectrum Extension (VSE) strength uses the v1.5.0 release-note lookup
+  - Spectrum Extension (VSE) strength uses the v1.5.5 release-note lookup
     (legacy step 0..10 -> 2200..8200 Hz, ``2200 + step*600``); the new
     independent exciter has no legacy equivalent and stays at its default.
 """
@@ -21,8 +21,8 @@ import xml.etree.ElementTree as ET
 from pathlib import Path
 
 # Path to Default Presets
-default_m1_json_file = Path("default_presets/json/default_m1.json")
-default_m2_json_file = Path("default_presets/json/default_m2.json")
+default_m1_json_file = Path("default_presets/json_v1/default_m1.json")
+default_m2_json_file = Path("default_presets/json_v1/default_m2.json")
 
 # Keys whose speaker variant is NOT "spk" + Capitalized(base).
 _SPK_KEY_OVERRIDES = {"speakerOptEnabled": "speakerOptEnabled"}
@@ -300,8 +300,8 @@ def write_json_for_xml(xml_path: Path, out_dir: Path, preset_name: str) -> Path:
     return json_path
 
 
-def convert_json_presets(input_dir: Path, output_dir: Path) -> Path:
-    """Convert every 2.7.2+ preset XML in ``input_dir`` to a modern JSON preset.
+def convert_json_v1_presets(input_dir: Path, output_dir: Path) -> Path:
+    """Convert every 2.7.2+ preset XML in ``input_dir`` to a v1 flat JSON preset.
 
     Writes a ``<stem>.json`` into ``output_dir`` for each ``<stem>.xml`` found in
     ``input_dir`` (non-recursive). Standalone JSON converter; see
@@ -329,7 +329,7 @@ if __name__ == "__main__":
     input_dir = Path("")
     output_dir = Path("")
 
-    convert_json_presets(
+    convert_json_v1_presets(
         input_dir=input_dir,
         output_dir=output_dir,
     )

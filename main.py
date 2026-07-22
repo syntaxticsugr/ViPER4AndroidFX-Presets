@@ -22,21 +22,23 @@ def process(input_dir: Path, output_dir: Path, version: str) -> None:
         input_dir=extract_dir,
         output_dir=output_dir,
     )
-    preset_xml_dir, preset_json_dir = convert_presets(
+    preset_xml_dir, preset_json_v1_dir, preset_json_v2_dir = convert_presets(
         input_dir=xml_dir,
         output_dir=output_dir,
     )
 
     prune_noop_presets(
         xml_dir=preset_xml_dir,
-        json_dir=preset_json_dir,
+        json_v1_dir=preset_json_v1_dir,
+        json_v2_dir=preset_json_v2_dir,
         report_dir=release_dir,
     )
     create_release(
         irs_dir=irs_dir,
         vdc_dir=vdc_dir,
         xml_dir=preset_xml_dir,
-        json_dir=preset_json_dir,
+        json_v1_dir=preset_json_v1_dir,
+        json_v2_dir=preset_json_v2_dir,
         output_dir=output_dir,
         version=version,
     )

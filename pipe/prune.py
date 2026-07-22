@@ -97,15 +97,17 @@ def is_noop_preset(xml: Path) -> bool:
 
 def prune_noop_presets(
     xml_dir: Path,
-    json_dir: Path,
+    json_v1_dir: Path,
+    json_v2_dir: Path,
     report_dir: Path,
 ) -> list[str]:
     """Delete the no-op presets in ``xml_dir`` along with their JSON twins.
 
     Every ``*.xml`` that :func:`is_noop_preset` flags is removed, together with
-    the same-named ``.json`` in ``json_dir``, so no release variant can include
-    it. The removed names are written to ``<report_dir>/pruned.txt`` (an empty
-    file when nothing was pruned). Returns the sorted list of removed names.
+    the same-named ``.json`` in ``json_v1_dir`` and ``json_v2_dir``, so no
+    release variant can include it. The removed names are written to
+    ``<report_dir>/pruned.txt`` (an empty file when nothing was pruned). Returns
+    the sorted list of removed names.
     """
     print("Pruning Flagged Presets ...")
 
@@ -115,9 +117,10 @@ def prune_noop_presets(
             continue
 
         xml.unlink()
-        twin = json_dir / f"{xml.stem}.json"
-        if twin.is_file():
-            twin.unlink()
+        for json_dir in (json_v1_dir, json_v2_dir):
+            twin = json_dir / f"{xml.stem}.json"
+            if twin.is_file():
+                twin.unlink()
         pruned.append(xml.stem)
 
     print(f"Pruned {len(pruned)} flagged preset(s).")

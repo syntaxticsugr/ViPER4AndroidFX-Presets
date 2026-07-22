@@ -33,7 +33,7 @@ class ReleaseFiles:
 
     ``Kernel`` and ``DDC`` hold the format-independent ``.irs``/``.vdc``
     companions, shared by every preset format. ``Preset`` is the parent for the
-    per-format subfolders (``Preset/XML``, ``Preset/JSON``).
+    per-format subfolders (``Preset/XML``, ``Preset/JSON_V1``, ``Preset/JSON_V2``).
     """
 
     base_dir: Path
@@ -61,7 +61,7 @@ class ReleaseFiles:
 class PresetFormat:
     """A preset format to materialise a release in."""
 
-    name: str  # release sub-folder, e.g. "XML" / "JSON"
+    name: str  # release sub-folder, e.g. "XML" / "JSON_V1" / "JSON_V2"
     src_dir: Path  # where the converted preset files live
     ext: str  # preset file extension, e.g. ".xml" / ".json"
 
@@ -237,7 +237,8 @@ def create_release(
     irs_dir: Path,
     vdc_dir: Path,
     xml_dir: Path,
-    json_dir: Path,
+    json_v1_dir: Path,
+    json_v2_dir: Path,
     output_dir: Path,
     version: str,
 ) -> Path:
@@ -247,9 +248,10 @@ def create_release(
     computed once, in code, from the duplicate analysis, then materialised under
     ``<version>/<variant>``. Kernels/DDCs are format-independent, so they are
     copied once per variant into ``Kernel``/``DDC``; the presets are written per
-    format into ``Preset/XML`` (2.7.2+ XML) and ``Preset/JSON`` (the modern
-    ``com.llsl.viper4android`` JSON). Both formats share one selection, so they
-    stay in lockstep, and the shared companions are never duplicated.
+    format into ``Preset/XML`` (2.7.2+ XML), ``Preset/JSON_V1`` (the legacy v1
+    flat ``com.llsl.viper4android`` JSON) and ``Preset/JSON_V2`` (the v2 grouped
+    JSON the current app reads). All formats share one selection, so they stay in
+    lockstep, and the shared companions are never duplicated.
     """
     print(f"Creating Release {version} ...")
 
@@ -292,7 +294,8 @@ def create_release(
     # --- Materialise every variant, sharing kernels/DDCs across formats ----
     formats = [
         PresetFormat(name="XML", src_dir=xml_dir, ext=".xml"),
-        PresetFormat(name="JSON", src_dir=json_dir, ext=".json"),
+        PresetFormat(name="JSON_V1", src_dir=json_v1_dir, ext=".json"),
+        PresetFormat(name="JSON_V2", src_dir=json_v2_dir, ext=".json"),
     ]
 
     for variant_name, selection in selections.items():
