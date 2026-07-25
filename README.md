@@ -36,6 +36,29 @@ Values of `Master Limiter` & `Playback Gain Control` are set to [ViPER Defaults]
 
 <br>
 
+### Convert Your Own Presets
+
+Got presets in another layout? Convert them faithfully in any direction — legacy / 2.7.2.x `XML` ↔ v1 flat `JSON` ↔ v2 grouped `JSON`.
+
+**1. On-device (Magisk / KernelSU / APatch module)**
+
+Flash the [ViPER4Android Presets Converter](https://github.com/syntaxticsugr/ViPER4Android-Presets-Converter) module. It scans your `Download` folder and writes every preset back in all three formats to `Download/syntaxticsugr/presets/{xml,json_v1,json_v2}` — during flash, no reboot, no system changes.
+
+**2. With the Python here**
+
+- **Batch (full pipeline):** drop your presets into `in/`, run `python main.py`, and collect the packaged result from `out/`. This applies the release flavour (master switch on, output stage pinned to [ViPER defaults](https://github.com/syntaxticsugr/ViPER4Android-Presets/tree/main/default_presets)).
+
+- **Faithful one-off:** use the standalone converter — it carries every value unchanged and adds no flavour:
+
+  ```sh
+  python -m utils.convert.convert IN.xml     --target v2               --output OUT.v2.json
+  python -m utils.convert.convert IN.v2.json --target xml   --mode 1   --output OUT.xml
+  ```
+
+  `--target` (`xml` / `v1` / `v2`) · `--mode` (`1` headphone / `2` speaker — needed for `xml`/`v1` when the source is device-agnostic). The leading `-m` is Python's own "run module" flag, unrelated to `--mode`.
+
+<br>
+
 ### Want to share your collection of DDCs, Kernels & Presets?
 
 [Fill this Form :)](https://forms.gle/1JShGMdbTbujJfKQ9)
