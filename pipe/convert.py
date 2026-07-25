@@ -110,6 +110,43 @@ def mode_targets(fmt: str, mode: str | None, stem: str) -> list[tuple[str, str]]
     return [(m, f"{stem}-{suffix}") for m, suffix in MODE_SUFFIX.items()]
 
 
+def _reserve_stem(
+    base: str,
+    suffixes: list[str],
+    used_v2: set[str],
+    used_dev: set[str],
+) -> str:
+    """Reserve a collision-free output stem for a source and return it.
+
+    A source writes into two filename namespaces at once, and a clash in *either*
+    must rename the whole source, so its xml/v1/v2 stay aligned under one stem:
+
+    * ``json_v2/``            -> ``<stem>.json``                 (``used_v2``)
+    * ``xml/`` & ``json_v1/`` -> ``<stem><suffix>.{xml,json}``   (``used_dev``)
+
+    ``suffixes`` are the device-variant tails - ``[""]`` for a single-mode source,
+    ``["-headphone", "-speaker"]`` when it fans out. Reserving the *variants* (not
+    just the base) is what stops a mode-less ``Foo`` (-> ``Foo-headphone``) from
+    clobbering a literal ``Foo-headphone``. Compared case-insensitively so names
+    survive a copy onto a case-insensitive filesystem. Returns ``base`` unless a
+    ``_2``/``_3``/... was needed to dodge an earlier source's output.
+
+    These are collisions between *distinct* presets, so - unlike filter's
+    re-download renames - the result is deliberately not fed to ``collisions`` in
+    the release stage: both presets are meant to survive, not collapse onto one.
+    """
+    cand = base
+    n = 1
+    while cand.lower() in used_v2 or any(
+        f"{cand}{suffix}".lower() in used_dev for suffix in suffixes
+    ):
+        n += 1
+        cand = f"{base}_{n}"
+    used_v2.add(cand.lower())
+    used_dev.update(f"{cand}{suffix}".lower() for suffix in suffixes)
+    return cand
+
+
 def convert_presets(input_dir: Path, output_dir: Path) -> tuple[Path, Path, Path]:
     """Convert every preset in ``input_dir`` into all three supported formats.
 
@@ -134,6 +171,13 @@ def convert_presets(input_dir: Path, output_dir: Path) -> tuple[Path, Path, Path
     )
 
     converted = 0
+    # A source's three outputs share one stem; a clash - the same name in two
+    # subfolders, the same stem across source formats, or a fan-out variant
+    # meeting a literal "-headphone"/"-speaker" preset - takes a "_N" suffix
+    # rather than overwriting. Two namespaces: v2 (the base stem) and the shared
+    # xml+v1 device variants.
+    used_v2: set[str] = set()
+    used_dev: set[str] = set()
     # Walk recursively, so a flat folder of mixed presets and a tree split by
     # format (filter's ``presets/{xml,json_v1,json_v2}``) both just work.
     for source in sorted(input_dir.rglob("*")):
@@ -150,16 +194,28 @@ def convert_presets(input_dir: Path, output_dir: Path) -> tuple[Path, Path, Path
             # output stage pinned to defaults. The converter stays faithful; this
             # overlay is the pipeline's own choice.
 
-            # v2 is device-agnostic - one file per source, under the plain stem.
-            (preset_json_v2_dir / f"{source.stem}.json").write_text(
+            # Resolve the device targets, then claim a collision-free stem for the
+            # whole source (v2 base + every device variant it will emit).
+            targets = mode_targets(fmt=fmt, mode=mode, stem=source.stem)
+            suffixes = [stem[len(source.stem) :] for _m, stem in targets]
+            stem = _reserve_stem(
+                base=source.stem,
+                suffixes=suffixes,
+                used_v2=used_v2,
+                used_dev=used_dev,
+            )
+
+            # v2 is device-agnostic - one file per source, under the base stem.
+            (preset_json_v2_dir / f"{stem}.json").write_text(
                 data=convert(text=text, target="v2", transform=_enable_and_normalize)
                 + "\n",
                 encoding="utf-8",
             )
 
             # xml and v1 are device-specific - one file per resolved mode.
-            for target_mode, stem in mode_targets(fmt=fmt, mode=mode, stem=source.stem):
-                (preset_xml_dir / f"{stem}.xml").write_text(
+            for (target_mode, _orig_stem), suffix in zip(targets, suffixes):
+                out_stem = f"{stem}{suffix}"
+                (preset_xml_dir / f"{out_stem}.xml").write_text(
                     data=convert(
                         text=text,
                         target="xml",
@@ -168,7 +224,7 @@ def convert_presets(input_dir: Path, output_dir: Path) -> tuple[Path, Path, Path
                     ),
                     encoding="utf-8",
                 )
-                (preset_json_v1_dir / f"{stem}.json").write_text(
+                (preset_json_v1_dir / f"{out_stem}.json").write_text(
                     data=convert(
                         text=text,
                         target="v1",
