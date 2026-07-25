@@ -4,7 +4,7 @@ from pathlib import Path
 sys.path.append(str(object=Path(__file__).resolve().parent.parent))
 
 import re
-import shutil
+import zipfile
 
 from scripts.format import format_codebase
 
@@ -14,8 +14,10 @@ ARCHIVE_PREFIX = "ViPER4Android-Presets"
 # The pipeline's output directory - the source of truth for a standalone run.
 OUTPUT_DIR = Path("out")
 
-# Root README and its auto-generated "Release Info" table.
+# Root README (with its auto-generated "Release Info" table) and LICENSE - the
+# two docs bundled into every release archive.
 README = Path("README.md")
+LICENSE = Path("LICENSE")
 RELEASES_URL = "https://github.com/syntaxticsugr/ViPER4Android-Presets/releases/latest"
 VARIANTS = ("Full", "Lite", "Recommended")
 # Static blurb describing what each variant contains (one cell per variant).
@@ -24,65 +26,97 @@ VARIANT_BLURB = {
     "Lite": "Unique `Preset`s<br>Required `Kernel`s<br>Required `DDC`s",
     "Recommended": "Unique `Preset`s<br>Unique `Kernel`s<br>Unique `DDC`s",
 }
+# Preset formats, each its own row in the table: (label, Preset/ sub-folder, ext).
+# The spokes are pruned & deduplicated independently, so their counts diverge and
+# are worth showing separately; kernels/DDCs are format-independent (one row each).
+PRESET_FORMATS = (
+    ("XML", "XML", ".xml"),
+    ("JSON_V1", "JSON_V1", ".json"),
+    ("JSON_V2", "JSON_V2", ".json"),
+)
 
 
-def create_archives(release_dir: Path, output_dir: Path, version: str) -> list[Path]:
+def _add_tree(zf: zipfile.ZipFile, src_dir: Path, arc_root: str) -> None:
+    """Write every file under ``src_dir`` into ``zf`` beneath ``arc_root/``."""
+    for path in sorted(src_dir.rglob(pattern="*")):
+        if path.is_file():
+            zf.write(
+                filename=path,
+                arcname=f"{arc_root}/{path.relative_to(src_dir).as_posix()}",
+            )
+
+
+def _add_docs(zf: zipfile.ZipFile, docs: list[Path], arc_root: str) -> None:
+    """Write each existing doc into ``zf`` at ``arc_root/<name>``."""
+    for doc in docs:
+        if doc.is_file():
+            zf.write(filename=doc, arcname=f"{arc_root}/{doc.name}")
+
+
+def create_archives(
+    release_dir: Path,
+    version: str,
+    docs: list[Path] | None = None,
+) -> list[Path]:
     """Package a built release into GitHub-style zip artifacts.
 
-    One archive per variant folder found in ``release_dir``
-    (``<prefix>-v<version>-<Variant>.zip`` - e.g. ``...-Full.zip``) plus a
-    combined archive of the whole release (``<prefix>-v<version>.zip``). Each
-    archive carries that scope's ``Kernel``/``DDC``/``Preset`` tree and its
-    ``.txt`` diagnostics.
+    One archive per variant (``<prefix>-v<version>-<Variant>.zip`` - e.g.
+    ``...-Full.zip``) plus a combined one (``<prefix>-v<version>.zip``). Every
+    archive wraps its payload in a single top-level folder named after the
+    artifact - so extraction yields ``<prefix>-v<version>-Full/Kernel|DDC|Preset``
+    rather than spilling those into the current directory. The combined archive
+    nests the three variant folders under ``<prefix>-v<version>/``.
 
-    All archives land inside ``release_dir``. They are built in ``output_dir`` (a
-    sibling) first and moved in afterwards: the combined archive zips
-    ``release_dir`` wholesale, so building in place would make it swallow the
-    per-variant zips (or itself).
+    The root ``README.md``, ``LICENSE`` and the loose per-spoke ``.txt``
+    diagnostics (``dup_*``/``missing_*``/``pruned_*``) are bundled at the top
+    level of every archive, beside the payload. Archives land in ``release_dir``;
+    because each is built from an explicit file list that matches only ``.txt``
+    (never a ``.zip``), the combined archive never swallows a sibling zip, so no
+    out-of-tree staging is needed.
 
     Returns the created archive paths (inside ``release_dir``).
     """
     print("Creating Archives ...")
 
-    # Drop archives from a previous run so a re-run's combined zip (which zips
-    # release_dir wholesale) doesn't swallow them.
-    for stale in release_dir.glob(f"{ARCHIVE_PREFIX}-v*.zip"):
-        stale.unlink()
+    if docs is None:
+        docs = [README, LICENSE]
+    # Ship the per-spoke diagnostics (dup_/missing_/pruned_*.txt) in every
+    # archive too, at the top level beside the README and LICENSE.
+    docs = [*docs, *sorted(release_dir.glob(pattern="*.txt"))]
 
     base = f"{ARCHIVE_PREFIX}-v{version}"
-    # The variant folders (Full/Lite/Recommended) are the only subdirectories of
-    # a freshly built release; the diagnostics are loose ``.txt`` files.
-    variant_names = sorted(p.name for p in release_dir.iterdir() if p.is_dir())
+    variants = [variant for variant in VARIANTS if (release_dir / variant).is_dir()]
 
-    # Build outside release_dir so the combined archive (which zips release_dir)
-    # never contains a zip: one per variant (its tree + diagnostics at the root),
-    # then the combined one (every variant folder + the root diagnostics).
-    staged: list[Path] = [
-        Path(
-            shutil.make_archive(
-                base_name=str(object=output_dir / f"{base}-{variant_name}"),
-                format="zip",
-                root_dir=release_dir / variant_name,
-            )
-        )
-        for variant_name in variant_names
-    ]
-    staged.append(
-        Path(
-            shutil.make_archive(
-                base_name=str(object=output_dir / base),
-                format="zip",
-                root_dir=release_dir,
-            )
-        )
-    )
-
-    # Move the finished archives into release_dir.
     archives: list[Path] = []
-    for archive in staged:
-        dest = release_dir / archive.name
-        shutil.move(src=str(object=archive), dst=str(object=dest))
-        archives.append(dest)
+
+    # One zip per variant: <base>-<Variant>/ { Kernel, DDC, Preset, docs }.
+    for variant in variants:
+        arc_root = f"{base}-{variant}"
+        zip_path = release_dir / f"{arc_root}.zip"
+        with zipfile.ZipFile(
+            file=zip_path,
+            mode="w",
+            compression=zipfile.ZIP_DEFLATED,
+        ) as zf:
+            _add_tree(zf=zf, src_dir=release_dir / variant, arc_root=arc_root)
+            _add_docs(zf=zf, docs=docs, arc_root=arc_root)
+        archives.append(zip_path)
+
+    # Combined zip: <base>/ { Full/, Lite/, Recommended/, docs }.
+    zip_path = release_dir / f"{base}.zip"
+    with zipfile.ZipFile(
+        file=zip_path,
+        mode="w",
+        compression=zipfile.ZIP_DEFLATED,
+    ) as zf:
+        for variant in variants:
+            _add_tree(
+                zf=zf,
+                src_dir=release_dir / variant,
+                arc_root=f"{base}/{variant}",
+            )
+        _add_docs(zf=zf, docs=docs, arc_root=base)
+    archives.append(zip_path)
 
     return archives
 
@@ -94,48 +128,84 @@ def _count(directory: Path, suffix: str) -> int:
     return sum(1 for p in directory.glob(pattern=f"*{suffix}") if p.is_file())
 
 
-def _variant_counts(release_dir: Path, variant: str) -> tuple[int, int, int]:
-    """``(presets, kernels, ddcs)`` for one built variant.
+def _variant_counts(release_dir: Path, variant: str) -> tuple[dict[str, int], int, int]:
+    """``(presets-by-format, kernels, ddcs)`` for one built variant.
 
-    Presets are counted from ``Preset/XML`` (the JSON twin is 1:1).
+    Presets are counted per format - the spokes diverge, since each is pruned and
+    deduplicated on its own. Kernels and DDCs are format-independent, so a single
+    count each.
     """
     base = release_dir / variant
+    presets = {
+        label: _count(directory=base / "Preset" / subdir, suffix=ext)
+        for label, subdir, ext in PRESET_FORMATS
+    }
     return (
-        _count(directory=base / "Preset" / "XML", suffix=".xml"),
+        presets,
         _count(directory=base / "Kernel", suffix=".irs"),
         _count(directory=base / "DDC", suffix=".vdc"),
     )
 
 
+def _md_code(text: str) -> str:
+    """Turn markdown backtick code spans into HTML ``<code>`` for HTML cells."""
+    return re.sub(pattern=r"`([^`]+)`", repl=r"<code>\1</code>", string=text)
+
+
 def _release_table(release_dir: Path, version: str) -> str:
-    """Render the README "Release Info" table from a built release."""
+    """Render the README "Release Info" table as HTML (for merged cells).
+
+    Markdown tables can't merge cells, so this emits an HTML ``<table>`` that
+    GitHub renders inline: the ``Preset`` label spans its three per-format rows
+    (``XML``/``JSON_V1``/``JSON_V2``, which diverge), while the format-independent
+    ``Kernel`` and ``DDC`` labels span the label + format columns as single rows.
+    """
     counts = {
         variant: _variant_counts(release_dir=release_dir, variant=variant)
         for variant in VARIANTS
     }
-    rows = [
-        [f"[v{version}]({RELEASES_URL})", *VARIANTS],
-        ["⭐", *(VARIANT_BLURB[variant] for variant in VARIANTS)],
-        ["**Preset**", *(str(object=counts[v][0]) for v in VARIANTS)],
-        ["**Kernel**", *(str(object=counts[v][1]) for v in VARIANTS)],
-        ["**DDC**", *(str(object=counts[v][2]) for v in VARIANTS)],
-    ]
-    widths = [max(len(row[col]) for row in rows) for col in range(4)]
 
-    def line(cells: list[str]) -> str:
-        return "| " + " | ".join(c.ljust(widths[i]) for i, c in enumerate(cells)) + " |"
+    def cell(value: object, tag: str = "td", **attrs: str) -> str:
+        attr = "".join(f' {key}="{val}"' for key, val in attrs.items())
+        return f"<{tag}{attr}>{value}</{tag}>"
 
-    separator = "| " + " | ".join("-" * w for w in widths) + " |"
-    return "\n".join(
-        [
-            line(cells=rows[0]),
-            separator,
-            line(cells=rows[1]),
-            line(cells=rows[2]),
-            line(cells=rows[3]),
-            line(cells=rows[4]),
-        ]
+    def tr(*cells: str) -> str:
+        return "  <tr>" + "".join(cells) + "</tr>"
+
+    header = tr(
+        cell(f'<a href="{RELEASES_URL}">v{version}</a>', "th", colspan="2"),
+        *(cell(variant, "th") for variant in VARIANTS),
     )
+    blurb = tr(
+        cell("⭐", colspan="2"),
+        *(cell(_md_code(text=VARIANT_BLURB[variant])) for variant in VARIANTS),
+    )
+
+    preset_rows = []
+    for index, (label, _subdir, _ext) in enumerate(PRESET_FORMATS):
+        label_cell = (
+            [cell("<b>Preset</b>", rowspan=str(object=len(PRESET_FORMATS)))]
+            if index == 0
+            else []
+        )
+        preset_rows.append(
+            tr(
+                *label_cell,
+                cell(f"<code>{label}</code>"),
+                *(cell(counts[variant][0][label]) for variant in VARIANTS),
+            )
+        )
+
+    kernel = tr(
+        cell("<b>Kernel</b>", colspan="2"),
+        *(cell(counts[variant][1]) for variant in VARIANTS),
+    )
+    ddc = tr(
+        cell("<b>DDC</b>", colspan="2"),
+        *(cell(counts[variant][2]) for variant in VARIANTS),
+    )
+
+    return "\n".join(["<table>", header, blurb, *preset_rows, kernel, ddc, "</table>"])
 
 
 def update_readme(release_dir: Path, version: str, readme: Path = README) -> None:
@@ -149,8 +219,10 @@ def update_readme(release_dir: Path, version: str, readme: Path = README) -> Non
 
     text = readme.read_text(encoding="utf-8")
     table = _release_table(release_dir=release_dir, version=version)
+    # Match the existing table whether it's HTML (current) or a markdown table
+    # (pre-4.0.0), so a first run migrates it and later runs stay idempotent.
     new_text, replaced = re.subn(
-        pattern=r"(### Release Info\n\n)(?:\|.*\n)+",
+        pattern=r"(### Release Info\n\n)(?:<table>[\s\S]*?</table>\n?|(?:\|.*\n)+)",
         repl=lambda m: m.group(1) + table + "\n",
         string=text,
     )
@@ -186,14 +258,15 @@ def github_release(output_dir: Path = OUTPUT_DIR, readme: Path = README) -> None
     """Publish the built release: zip artifacts + a refreshed, formatted README.
 
     Standalone step - ``output_dir`` is the single source of truth. The release
-    folder is discovered there (its name is the version); its zip artifacts are
-    written, the README's "Release Info" table is refreshed to match, and the
-    codebase (incl. the rewritten README) is formatted.
+    folder is discovered there (its name is the version); the README's "Release
+    Info" table is refreshed to match and the codebase (incl. the rewritten
+    README) is formatted, then the zip artifacts are written - in that order, so
+    the README bundled into the archives is the finalised one.
     """
     release_dir, version = find_release(output_dir=output_dir)
-    create_archives(release_dir=release_dir, output_dir=output_dir, version=version)
     update_readme(release_dir=release_dir, version=version, readme=readme)
     format_codebase()
+    create_archives(release_dir=release_dir, version=version, docs=[readme, LICENSE])
 
 
 if __name__ == "__main__":
