@@ -63,7 +63,7 @@ def main(input_dir: Path, output_dir: Path, version: str) -> None:
 
 
 if __name__ == "__main__":
-    version = "3.0.0"
+    version = "4.0.0"
 
     input_dir = Path("in")
     output_dir = Path("out")

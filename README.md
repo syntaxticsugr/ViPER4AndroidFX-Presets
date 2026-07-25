@@ -20,12 +20,15 @@ Values of `Master Limiter` & `Playback Gain Control` are set to [ViPER Defaults]
 
 ### Release Info
 
-| [v3.0.0](https://github.com/syntaxticsugr/ViPER4Android-Presets/releases/latest) | Full                                         | Lite                                                      | Recommended                                           |
-| -------------------------------------------------------------------------------- | -------------------------------------------- | --------------------------------------------------------- | ----------------------------------------------------- |
-| ⭐                                                                               | All `Preset`s<br>All `Kernel`s<br>All `DDC`s | Unique `Preset`s<br>Required `Kernel`s<br>Required `DDC`s | Unique `Preset`s<br>Unique `Kernel`s<br>Unique `DDC`s |
-| **Preset**                                                                       | 1022                                         | 771                                                       | 771                                                   |
-| **Kernel**                                                                       | 2306                                         | 196                                                       | 1716                                                  |
-| **DDC**                                                                          | 627                                          | 44                                                        | 580                                                   |
+<table>
+  <tr><th colspan="2"><a href="https://github.com/syntaxticsugr/ViPER4Android-Presets/releases/latest">v4.0.0</a></th><th>Full</th><th>Lite</th><th>Recommended</th></tr>
+  <tr><td colspan="2">⭐</td><td>All <code>Preset</code>s<br>All <code>Kernel</code>s<br>All <code>DDC</code>s</td><td>Unique <code>Preset</code>s<br>Required <code>Kernel</code>s<br>Required <code>DDC</code>s</td><td>Unique <code>Preset</code>s<br>Unique <code>Kernel</code>s<br>Unique <code>DDC</code>s</td></tr>
+  <tr><td rowspan="3"><b>Preset</b></td><td><code>XML</code></td><td>1055</td><td>792</td><td>792</td></tr>
+  <tr><td><code>JSON_V1</code></td><td>1061</td><td>799</td><td>799</td></tr>
+  <tr><td><code>JSON_V2</code></td><td>1028</td><td>774</td><td>774</td></tr>
+  <tr><td colspan="2"><b>Kernel</b></td><td>2319</td><td>196</td><td>1716</td></tr>
+  <tr><td colspan="2"><b>DDC</b></td><td>627</td><td>45</td><td>580</td></tr>
+</table>
 
 <br>
 
