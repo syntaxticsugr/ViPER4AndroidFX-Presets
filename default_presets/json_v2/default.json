@@ -20,7 +20,7 @@
   },
   "fetCompressor": {
     "enable": false,
-    "threshold": 100,
+    "threshold": -18,
     "ratio": 100,
     "kneeAuto": true,
     "knee": 0,
@@ -64,7 +64,7 @@
   },
   "spectrumExtension": {
     "enable": false,
-    "strength": 8200,
+    "strength": 7600,
     "exciter": 0
   },
   "equalizer": {
@@ -120,13 +120,13 @@
     "width": 0,
     "damp": 0,
     "wet": 0,
-    "dry": 50
+    "dry": 100
   },
   "dynamicSystem": {
     "enable": false,
     "presetId": null,
     "device": 0,
-    "strength": 0,
+    "strength": 50,
     "xLow": 100,
     "xHigh": 5600,
     "yLow": 40,

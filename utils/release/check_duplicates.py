@@ -48,35 +48,25 @@ def process_directory(directory: Path, hashes: defaultdict) -> None:
 
 
 def check_duplicates(
-    irs_dir: Path,
-    vdc_dir: Path,
-    xml_dir: Path,
+    categories: dict[str, Path],
     output_dir: Path,
 ) -> dict[str, list[list[str]]]:
-    """Check for duplicate Kernels, DDCs & Presets.
+    """Group each category's files by identical content.
 
-    Writes the human-readable ``dup_{kernel,ddc,preset}.txt`` into ``output_dir``
-    and returns the same grouping in code as ``{"kernel": [...], "ddc": [...],
-    "preset": [...]}`` - each value a list of duplicate groups (sorted file
-    stems). Kernels are the ``.irs``, DDCs the ``.vdc``, Presets the ``.xml``.
+    ``categories`` maps a name (``"kernel"``, ``"ddc"``, ``"xml"``, ``"v1"``,
+    ``"v2"``, ...) to the directory holding that category's files. Each is hashed
+    independently - which is the whole point for presets: the same tuning lands as
+    identical bytes in one format and distinct bytes in another, so duplicates are
+    a per-format question. Writes ``dup_<name>.txt`` into ``output_dir`` and
+    returns ``{name: [duplicate groups]}`` (each group a list of sorted stems).
     """
+    create_directories(directories=[output_dir])
 
-    create_directories([output_dir])
+    result: dict[str, list[list[str]]] = {}
+    for name, directory in categories.items():
+        hashes: defaultdict = defaultdict(set)
+        process_directory(directory=directory, hashes=hashes)
+        write_duplicates_to_file(hashes=hashes, filename=output_dir / f"dup_{name}.txt")
+        result[name] = hash_groups(hashes=hashes)
 
-    kernel_hashes, dup_kernel_txt = defaultdict(set), output_dir / "dup_kernel.txt"
-    ddc_hashes, dup_ddc_txt = defaultdict(set), output_dir / "dup_ddc.txt"
-    preset_hashes, dup_preset_txt = defaultdict(set), output_dir / "dup_preset.txt"
-
-    process_directory(directory=irs_dir, hashes=kernel_hashes)
-    process_directory(directory=vdc_dir, hashes=ddc_hashes)
-    process_directory(directory=xml_dir, hashes=preset_hashes)
-
-    write_duplicates_to_file(hashes=kernel_hashes, filename=dup_kernel_txt)
-    write_duplicates_to_file(hashes=ddc_hashes, filename=dup_ddc_txt)
-    write_duplicates_to_file(hashes=preset_hashes, filename=dup_preset_txt)
-
-    return {
-        "kernel": hash_groups(hashes=kernel_hashes),
-        "ddc": hash_groups(hashes=ddc_hashes),
-        "preset": hash_groups(hashes=preset_hashes),
-    }
+    return result

@@ -1,98 +1,99 @@
+"""Drop no-op presets - ones that leave every effect at its default and so sound
+identical to applying nothing.
+
+Pruning is **per spoke**. Each converted format is judged on its own and its own
+files are removed, with no cross-format coupling: a preset whose only tuning is a
+json-only effect (multiband, dynamic EQ, ...) is a genuine no-op *as xml* - that
+effect can't be expressed there - so its xml is dropped while its v1/v2 survive.
+Because a file is parsed back into the canon before the check, and a narrower
+format simply never carries the effects it lacks, one rule covers all three: xml
+only ever "sees" xml-representable tuning, v1/v2 see everything.
+
+The no-op rule matches the app's own notion of an inert preset: an effect changes
+the sound only when it is switched on *and* at least one of its parameters differs
+from the default. Two kinds of switch never count as tuning and are left out:
+
+* the output stage - master limiter and playback gain - which the release flavour
+  pins to defaults, so it can never differ;
+* parameterless toggles (Tube Simulator, Speaker Optimization) and the master
+  switch, which have no parameter that could differ from the default.
+
+The last two fall out for free: a group with no non-``enable`` parameters can
+never satisfy "a parameter differs", so it is skipped without being named.
+"""
+
 from pathlib import Path
 
-from utils.release.search_in_xml import search_in_xml
+from utils.convert import registry as R
+from utils.convert.parse import canon_defaults, parse
 
-_ROOT = Path(__file__).resolve().parent.parent
-
-# Each preset targets one output mode, stored in parameter 32775:
-# "1" = headphone/bluetooth/usb, "2" = speaker. The modes ship different default
-# presets, so a preset is always compared against the default for its own mode.
-MODE = "32775"
-DEFAULT_PRESETS = {
-    "1": _ROOT / "default_presets/xml/default_m1.xml",
-    "2": _ROOT / "default_presets/xml/default_m2.xml",
-}
-
-# The effects whose parameters decide whether a preset does anything, as
-# ``enable-flag id -> [parameter ids]``. An effect changes the sound only when its
-# enable flag is on AND at least one of its parameters differs from the default
-# preset; an effect switched on but left at default values - a flat EQ, a
-# zero-gain Bass, a Convolver with no kernel - is inaudible. Ids come from
-# default_presets/xml/m{1,2}_keys.txt.
-#
-# Some switches are intentionally left out of TUNED_EFFECTS because they can never
-# represent custom tuning:
-#  - parameterless toggles, with no value that could differ from the default:
-#    Master Switch (36868), Speaker Optimization (65603), Tube Simulator (65583)
-#  - converter rewrites to the default on every preset:
-#    Playback Gain (65565) and the master limiter (65586-65588)
-TUNED_EFFECTS = {
-    "65610": [
-        "65611",
-        "65612",
-        "65613",
-        "65614",
-        "65615",
-        "65616",
-        "65617",
-        "65618",
-        "65619",
-        "65620",
-        "65621",
-        "65622",
-        "65623",
-        "65624",
-        "65625",
-        "65626",
-    ],  # FET Compressor
-    "65546": ["65547"],  # ViPER DDC (device file)
-    "65548": ["65549;65550"],  # Spectrum Extension
-    "65551": ["65552"],  # FIR Equalizer (band gains)
-    "65538": ["65540;65541;65542", "65543"],  # Convolver (kernel, cross-channel)
-    "65553": ["65554;65556", "65555"],  # Field Surround
-    "65557": ["65558"],  # Differential Surround
-    "65544": ["65545"],  # Headphone Surround +
-    "65559": ["65560", "65561", "65562", "65563", "65564"],  # Reverberation
-    "65569": ["65570;65571;65572", "65573"],  # Dynamic System
-    "65574": ["65575", "65576", "65577"],  # ViPER Bass
-    "65578": ["65579", "65580"],  # ViPER Clarity
-    "65581": ["65582"],  # Auditory System Protection
-    "65584": ["65585"],  # AnalogX
-}
-
-_TUNED_PARAMS = [param for params in TUNED_EFFECTS.values() for param in params]
-_default_cache: dict[str, dict[str, str | None]] = {}
+# The output stage is normalised by the release flavour, so it never signals
+# tuning; excluded explicitly rather than relying on the flavour having run.
+_OUTPUT_STAGE_GROUPS = frozenset({"masterLimiter", "playbackGainControl"})
 
 
-def _default_values(mode: str) -> dict[str, str | None]:
-    """Return (and cache) the default preset's parameter values for ``mode``."""
-    if mode not in _default_cache:
-        path = DEFAULT_PRESETS.get(mode, DEFAULT_PRESETS["1"])
-        _default_cache[mode] = search_in_xml(xml=path, keys=_TUNED_PARAMS)
-    return _default_cache[mode]
+def _tuned_groups() -> dict[str, list[str]]:
+    """Build ``{effect group: [its parameter canon fields]}`` from the registry.
 
-
-def is_noop_preset(xml: Path) -> bool:
-    """Return True if the preset leaves every effect at its default.
-
-    Such a preset is the default config with nothing actually tuned, so it sounds
-    identical to the default and is safe to drop. The preset "does something" as
-    soon as one enabled effect in :data:`TUNED_EFFECTS` has a parameter that
-    differs from its mode's default preset.
+    A group qualifies when it has an ``enable`` switch and at least one other
+    parameter. Groups with only an ``enable`` (parameterless toggles) and the
+    output stage are excluded, matching the app's inert-preset rule.
     """
-    found = search_in_xml(
-        xml=xml,
-        keys=[MODE, *TUNED_EFFECTS, *_TUNED_PARAMS],
-    )
+    by_group: dict[str, list[R.Field]] = {}
+    for f in R.FIELDS:
+        if f.group:
+            by_group.setdefault(f.group, []).append(f)
 
-    default = _default_values(found.get(MODE) or "1")
-    for enable, params in TUNED_EFFECTS.items():
-        if (found.get(enable) or "").lower() != "true":
-            continue  # effect switched off
-        if any(found.get(param) != default.get(param) for param in params):
-            return False  # enabled and tuned away from the default
+    tuned: dict[str, list[str]] = {}
+    for group, fields in by_group.items():
+        if group in _OUTPUT_STAGE_GROUPS:
+            continue
+        leaves = {f.leaf for f in fields}
+        if "enable" not in leaves:
+            continue
+        params = [f.canon for f in fields if f.leaf != "enable"]
+        if params:
+            tuned[group] = params
+    return tuned
 
+
+_TUNED_GROUPS = _tuned_groups()
+_DEFAULTS = canon_defaults()
+
+
+def is_noop(canon: dict) -> bool:
+    """True when ``canon`` leaves every effect at its default.
+
+    An effect "does something" only when it is enabled and at least one of its
+    parameters differs from the canonical default; if none do, the preset is a
+    no-op.
+    """
+    for group, params in _TUNED_GROUPS.items():
+        if not canon.get(f"{group}.enable"):
+            continue
+        if any(canon.get(param) != _DEFAULTS.get(param) for param in params):
+            return False
     return True
+
+
+def _prune_dir(directory: Path, suffix: str) -> list[str]:
+    """Delete every no-op ``*suffix`` preset in ``directory``; return their stems."""
+    pruned: list[str] = []
+    for preset in sorted(directory.glob(f"*{suffix}")):
+        try:
+            canon, _mode = parse(
+                text=preset.read_text(
+                    encoding="utf-8",
+                    errors="replace",
+                )
+            )
+        except Exception as exc:
+            print(f"  [prune] Could not read {preset.name}: {exc}")
+            continue
+        if is_noop(canon=canon):
+            preset.unlink()
+            pruned.append(preset.stem)
+    return pruned
 
 
 def prune_noop_presets(
@@ -100,32 +101,25 @@ def prune_noop_presets(
     json_v1_dir: Path,
     json_v2_dir: Path,
     report_dir: Path,
-) -> list[str]:
-    """Delete the no-op presets in ``xml_dir`` along with their JSON twins.
+) -> dict[str, list[str]]:
+    """Prune no-op presets from each converted format independently.
 
-    Every ``*.xml`` that :func:`is_noop_preset` flags is removed, together with
-    the same-named ``.json`` in ``json_v1_dir`` and ``json_v2_dir``, so no
-    release variant can include it. The removed names are written to
-    ``<report_dir>/pruned.txt`` (an empty file when nothing was pruned). Returns
-    the sorted list of removed names.
+    Each of ``xml_dir``/``json_v1_dir``/``json_v2_dir`` is pruned against its own
+    contents - the formats are not kept in lockstep, since a preset can be inert
+    in one and meaningful in another. The removed stems are written per format to
+    ``<report_dir>/pruned_{xml,v1,v2}.txt`` and returned as
+    ``{"xml": [...], "v1": [...], "v2": [...]}``.
     """
-    print("Pruning Flagged Presets ...")
+    print("Pruning No-op Presets ...")
 
-    pruned: list[str] = []
-    for xml in sorted(xml_dir.glob("*.xml")):
-        if not is_noop_preset(xml=xml):
-            continue
+    pruned = {
+        "xml": _prune_dir(directory=xml_dir, suffix=".xml"),
+        "v1": _prune_dir(directory=json_v1_dir, suffix=".json"),
+        "v2": _prune_dir(directory=json_v2_dir, suffix=".json"),
+    }
 
-        xml.unlink()
-        for json_dir in (json_v1_dir, json_v2_dir):
-            twin = json_dir / f"{xml.stem}.json"
-            if twin.is_file():
-                twin.unlink()
-        pruned.append(xml.stem)
-
-    print(f"Pruned {len(pruned)} flagged preset(s).")
-
-    with open(file=report_dir / "pruned.txt", mode="w") as file:
-        file.writelines(f"{stem}\n" for stem in pruned)
+    for spoke, stems in pruned.items():
+        with open(file=report_dir / f"pruned_{spoke}.txt", mode="w") as report:
+            report.writelines(f"{stem}\n" for stem in stems)
 
     return pruned
