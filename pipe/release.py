@@ -3,10 +3,10 @@ import shutil
 from dataclasses import dataclass
 from pathlib import Path
 
-from utils.convert.parse import parse
 from utils.create_directories import create_directories
 from utils.release.check_duplicates import check_duplicates
 from utils.release.list_missings import list_missings
+from utils.release.preset_deps import preset_deps
 
 # Preset files whose names contain any of these keywords are considered
 # original and selected from a group of duplicates.
@@ -84,7 +84,7 @@ def select_whitelist_preset(group: list[str], whitelist: list[str]) -> str:
         if any(word.lower() in name.lower() for word in whitelist)
     ]
     if matching_names:
-        return sorted(matching_names)[0]
+        return min(matching_names)
     return group[0]
 
 
@@ -144,21 +144,6 @@ def select_deduped(groups: list[list[str]]) -> list[str]:
         if len(group) > 1
         else group[0]
         for group in groups
-    )
-
-
-def preset_deps(path: Path) -> tuple[str | None, str | None]:
-    """Return the (kernel, ddc) companion stems a preset references, if any.
-
-    Reads them from the canon, so it works for any format - a v2 or v1 preset's
-    convolver kernel and DDC device are found the same way as an xml's.
-    """
-    canon, _mode = parse(path.read_text(encoding="utf-8", errors="replace"))
-    kernel = canon.get("convolver.kernelFile") or ""
-    ddc = canon.get("ddc.device") or ""
-    return (
-        Path(kernel).stem if kernel else None,
-        Path(ddc).stem if ddc else None,
     )
 
 
@@ -285,7 +270,7 @@ def create_release(
     list_missings(
         irs_dir=irs_dir,
         vdc_dir=vdc_dir,
-        xml_dir=xml_dir,
+        preset_dirs={"xml": xml_dir, "v1": json_v1_dir, "v2": json_v2_dir},
         output_dir=release_dir,
     )
 
@@ -340,14 +325,5 @@ def create_release(
                 preset_dest=preset_dest,
                 fmt=fmt,
             )
-
-        # Per-variant diagnostic: which shipped XML presets reference a companion
-        # that didn't make it into this variant.
-        list_missings(
-            irs_dir=variant.kernel_dir,
-            vdc_dir=variant.ddc_dir,
-            xml_dir=variant.preset_dir / "XML",
-            output_dir=variant.base_dir,
-        )
 
     return release_dir

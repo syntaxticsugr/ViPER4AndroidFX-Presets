@@ -2,66 +2,59 @@ import os
 from collections import defaultdict
 from pathlib import Path
 
-from utils.release.search_in_xml import search_in_xml
+from utils.release.preset_deps import preset_deps
+
+
+def _format_section(missing: dict[str, set[str]]) -> list[str]:
+    """Render one companion type's misses as ``count : name : [presets]`` lines,
+    largest group first (ties broken by name)."""
+    lines = [
+        f"{len(presets)} : {name} : {sorted(presets)}\n"
+        for name, presets in missing.items()
+    ]
+    return sorted(
+        lines,
+        key=lambda line: (int(line.split(" : ")[0]), line.split(" : ")[1]),
+        reverse=True,
+    )
 
 
 def list_missings(
     irs_dir: Path,
     vdc_dir: Path,
-    xml_dir: Path,
+    preset_dirs: dict[str, Path],
     output_dir: Path,
 ) -> None:
-    """List missing IRSs & VDCs in missing.txt"""
+    """Per spoke, list the IRS/VDC companions its presets reference but that are
+    absent from ``irs_dir``/``vdc_dir``, into ``missing_<spoke>.txt``.
 
-    missing_irs = defaultdict(set)
-    missing_vdc = defaultdict(set)
+    ``preset_dirs`` maps a spoke name (``"xml"``, ``"v1"``, ``"v2"``) to its
+    converted-preset directory. Each is scanned on its own - the spokes are
+    pruned independently, so a preset (and thus its missing companion) can be
+    present in one spoke yet gone from another.
 
-    for root, _, files in os.walk(top=xml_dir):
-        root = Path(root)
+    Companion refs are read from the canon (via :func:`preset_deps`), so every
+    spoke is scanned the same way, and the very extraction that gathers a
+    variant's companions is what decides here whether one is missing.
+    """
+    for spoke, preset_dir in preset_dirs.items():
+        missing_irs: defaultdict[str, set[str]] = defaultdict(set)
+        missing_vdc: defaultdict[str, set[str]] = defaultdict(set)
 
-        for file in files:
-            xml = root / file
+        for root, _, files in os.walk(top=preset_dir):
+            root = Path(root)
+            for file in files:
+                kernel, ddc = preset_deps(path=root / file)
+                if kernel and not (irs_dir / f"{kernel}.irs").is_file():
+                    missing_irs[f"{kernel}.irs"].add(file)
+                if ddc and not (vdc_dir / f"{ddc}.vdc").is_file():
+                    missing_vdc[f"{ddc}.vdc"].add(file)
 
-            found = search_in_xml(
-                xml=xml,
-                keys=["65540;65541;65542", "65547"],
-            )
-            irs = found["65540;65541;65542"]
-            vdc = found["65547"]
-
-            if (irs is not None) and not os.path.isfile(path=irs_dir / irs):
-                missing_irs[irs].add(file)
-
-            if (vdc is not None) and not os.path.isfile(path=vdc_dir / vdc):
-                missing_vdc[vdc].add(file)
-
-    with open(file=output_dir / "missing.txt", mode="w") as file:
-        missing = ["[IRS]\n"]
-
-        temp_missing = []
-        for key, value in missing_irs.items():
-            value = sorted(value)
-            temp_missing.append(f"{len(value)} : {key} : {value}\n")
-
-        temp_missing = sorted(
-            temp_missing,
-            key=lambda x: (int(x.split(sep=" : ")[0]), x.split(sep=" : ")[1]),
-            reverse=True,
-        )
-        missing.extend(temp_missing)
-
-        missing.append("\n[VDC]\n")
-
-        temp_missing = []
-        for key, value in missing_vdc.items():
-            value = sorted(value)
-            temp_missing.append(f"{len(value)} : {key} : {value}\n")
-
-        temp_missing = sorted(
-            temp_missing,
-            key=lambda x: (int(x.split(sep=" : ")[0]), x.split(sep=" : ")[1]),
-            reverse=True,
-        )
-        missing.extend(temp_missing)
-
-        file.writelines(missing)
+        lines = [
+            "[IRS]\n",
+            *_format_section(missing=missing_irs),
+            "\n[VDC]\n",
+            *_format_section(missing=missing_vdc),
+        ]
+        with open(file=output_dir / f"missing_{spoke}.txt", mode="w") as file:
+            file.writelines(lines)
